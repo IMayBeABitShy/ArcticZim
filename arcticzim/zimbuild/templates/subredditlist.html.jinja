@@ -1,0 +1,13 @@
+{# This is a list of subreddits. Expects "subreddit_infos" and "to_root" argument. #}
+
+<DIV class="subredditlist">
+    <UL>
+        {% for subreddit_info in subreddit_infos %}
+            <LI>
+                {% with to_root=to_root, subreddit_info=subreddit_info %}
+                    {% include "subredditinfo.html.jinja" %}
+                {% endwith %}
+            </LI>
+        {% endfor %}
+    </UL>
+</DIV>

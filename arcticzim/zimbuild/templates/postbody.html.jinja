@@ -1,0 +1,10 @@
+{# This is the body of a post. Expects "post", "to_root" argument. #}
+
+<DIV class="postbody" id="postbody">
+    {% block postbody %}
+        {% if post.post_hint == "image" %}
+            <img class="postimage" src="{{ post.url }}"></image>
+        {% endif %}
+        <DIV class="postbodytext mdbody"> {{ post.selftext|render_post_text }}</DIV>
+    {% endblock %}
+</DIV>

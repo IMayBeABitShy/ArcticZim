@@ -1,0 +1,24 @@
+{# This template contains the page number links for a in the simplelist #}
+
+<DIV class="simplelist_navigation">
+    {% if pagenum > 0 %}
+        {# add previous page controls #}
+        <DIV class="pagination_element"><A class="pagenumlink" href="page_0.html">&lt;&lt;</A></DIV>
+        <DIV class="pagination_element"><A class="pagenumlink" href="page_{{ pagenum-1 }}.html">&lt;</A></DIV>
+    {% endif %}
+    {# close page numbers #}
+    {% for i in range([0, pagenum-2]|max, [num_pages, pagenum+3]|min) %}
+        {% if i == pagenum %}
+            {# the link to the current page #}
+            <DIV class="pagination_element">{{ pagenum }}</DIV>
+        {% else %}
+            {# a regular page link #}
+            <DIV class="pagination_element"><A class="pagenumlink" href="page_{{ i }}.html">{{ i }}</A></DIV>
+        {% endif %}
+    {% endfor %}
+    {% if pagenum < (num_pages - 1) %}
+        {# add next page controls #}
+        <DIV class="pagination_element"><A class="pagenumlink" href="page_{{ pagenum+1 }}.html">&gt;</A></DIV>
+        <DIV class="pagination_element"><A class="pagenumlink" href="page_{{ num_pages-1 }}.html">&gt;&gt;</A></DIV>
+    {% endif %}
+</DIV>

@@ -1,0 +1,23 @@
+{# This is the page listing licenses and attributions. Expects "licenses" and "to_root" argument. #}
+{% extends "base.html.jinja" %}
+
+{% block title %}
+    <TITLE>ArcticZim - Licenses and Attributions</TITLE>
+{% endblock %}
+
+{% block bannertext %}
+    <H1 class="bannertext">Licenses and Attributions</H1>
+{% endblock %}
+
+{% block content %}
+    <DIV class="licenses">
+        {% for name, license in licenses|dictsort %}
+            <DIV class="license">
+                <H2 class="licensename">{{ name }}</H2>
+                <DIV class="licensetext-container">
+                    <P class="licensetext">{{ license|render_license }}</P>
+                </DIV>
+            </DIV>
+        {% endfor %}
+    </DIV>
+{% endblock %}

@@ -1,0 +1,19 @@
+{# This is the global statistics page. Expects "stats" and "to_root" argument. #}
+{% extends "base.html.jinja" %}
+
+{% block title %}
+    <TITLE>ArcticZim - Statistics</TITLE>
+{% endblock %}
+
+{% block bannertext %}
+    <H1 class="bannertext">ArcticZim - Statistics</H1>
+{% endblock %}
+
+{% block content %}
+    <CENTER>
+        <H2>Statistics</H2>
+        {% with post_statistics=stats, to_root=to_root %}
+            {% include "postliststatistics.html.jinja" %}
+        {% endwith %}
+    </CENTER>
+{% endblock %}

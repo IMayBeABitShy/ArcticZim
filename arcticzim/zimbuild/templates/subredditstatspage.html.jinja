@@ -1,0 +1,15 @@
+{# This is a statistics page for a subreddit. Expects "subreddit", "stats" and "to_root" argument. #}
+{% extends "subredditbase.html.jinja" %}
+
+{% block title %}
+    <TITLE>r/{{ subreddit.name }} - Statistics</TITLE>
+{% endblock %}
+
+{% block subredditcontent %}
+    <CENTER>
+        <H2>Statistics</H2>
+        {% with post_statistics=stats, to_root=to_root %}
+            {% include "postliststatistics.html.jinja" %}
+        {% endwith %}
+    </CENTER>
+{% endblock %}

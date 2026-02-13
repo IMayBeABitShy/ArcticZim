@@ -1,0 +1,22 @@
+{# This is a page listing the comments of an user. Expects "user", "comments", "num_pages", "cur_page", "sort" and "to_root" argument. #}
+{% extends "userbase.html.jinja" %}
+
+{% block scripts %}
+    <script src="{{ to_root }}/scripts/jquery.js"></script>
+    <script src="{{ to_root }}/scripts/preview.js"></script>
+{% endblock %}
+
+{% block title %}
+    <TITLE>u/{{ user.name }} - {{ sort }} comments</TITLE>
+{% endblock %}
+
+{% block usercontent %}
+    <DIV class="usercomments">
+        {% with to_root=to_root, comments=comments %}
+            {% include "usercommentslist.html.jinja" %}
+        {% endwith %}
+    </DIV>
+    {% with to_root=to_root, num_pages=num_pages, cur_page=cur_page, prefix=("comments_" + sort) %}
+        {% include "pagebuttons.html.jinja" %}
+    {% endwith %}
+{% endblock %}

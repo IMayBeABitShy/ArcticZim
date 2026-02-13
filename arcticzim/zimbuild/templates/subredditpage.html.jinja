@@ -1,0 +1,27 @@
+{# This is a page for a subreddit. Expects "subreddit", "posts", "num_pages", "cur_page", "sort" and "to_root" argument. #}
+{% extends "subredditbase.html.jinja" %}
+
+{% block htmlmeta %}
+    {{ super() }}
+    <META name="keywords" content="Name: {{ subreddit.name }}, Subscribers: {{ subreddit.subscribers }}, Type: Subreddit">
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ to_root }}/scripts/jquery.js"></script>
+    <script src="{{ to_root }}/scripts/preview.js"></script>
+{% endblock %}
+
+{% block title %}
+    <TITLE>r/{{ subreddit.name }} - {{ sort }} posts</TITLE>
+{% endblock %}
+
+{% block subredditcontent %}
+    <DIV class="subredditposts">
+        {% with to_root=to_root, posts=posts, with_subreddit=false %}
+            {% include "postlist.html.jinja" %}
+        {% endwith %}
+    </DIV>
+    {% with to_root=to_root, num_pages=num_pages, cur_page=cur_page, prefix=sort %}
+        {% include "pagebuttons.html.jinja" %}
+    {% endwith %}
+{% endblock %}

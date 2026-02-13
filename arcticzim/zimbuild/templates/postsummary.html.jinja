@@ -1,0 +1,35 @@
+{# This is a link+summary of a post. Expects "post", "with_subreddit" and "to_root" argument. #}
+
+<DIV class="postsummary" data-post="{{ post.id }}" data-subreddit="{{ post.subreddit.name }}">
+    <DIV class="posttitle-container">
+        {% block postscore %}
+            <H1 class="postscore">{{ post.score }}</H1>
+        {% endblock %}
+        {% block postpreview %}
+            <img class="posticon" src="{{ to_root }}/icons/icon_{{ post.icon_name }}.png"></img>
+        {% endblock %}
+        {% block posttitle %}
+            <H1 class="posttitle"><A href="{% if post.is_self %}{{ to_root }}/r/{{ post.subreddit.name }}/{{ post.id }}/{% else %}{{ post.url }}{% endif %}">{{ post.title|escape }}</A></H1>
+        {% endblock %}
+        {% block postflair %}
+            {% if post.link_flair_text %}
+                <P class="postflair" style="color: {{ post.link_flair_text_color|default("", true) }}">{{ post.link_flair_text}}</P>
+            {% endif %}
+        {% endblock %}
+    </DIV>
+    <P class="postmeta">
+        Posted {{ post.created_utc|format_timestamp }}
+        by <A class="authorlink" href="{{ to_root }}/u/{{ post.author.name }}/">{{ post.author.name|escape }}</A>
+        {% if post.author_flair_text %}
+            <P class="authorflair postflair" style="color: {{ post.author_flair_text_color|default("", true) }}">{{ post.author_flair_text}}</P>
+        {% endif %}
+        {% if with_subreddit %}
+            in <A class="subredditlink" href="{{ to_root }}/r/{{ post.subreddit.name }}/">r/{{ post.subreddit.name }}</A>
+        {% endif %}
+    </P>
+    {% if with_util_links %}
+        {% with post=post, to_root=to_root %}
+            {% include "postutillinks.html.jinja" %}
+        {% endwith %}
+    {% endif %}
+</DIV>

@@ -1,0 +1,13 @@
+{# This file contains a single page button. Expects "to_root", "pagenum", "prefix" and optional "label" and "fragment" arguments. #}
+
+{% block button_opener %}
+    <DIV class="page_button">
+{% endblock %}
+
+{% block button_content %}
+    <A class="page_button_link" href="../{{ prefix }}_page_{{ pagenum }}/{{ fragment|default("") }}">{{ label|default(pagenum)|escape }}</A>
+{% endblock %}
+
+{% block button_closer %}
+    </DIV>
+{% endblock %}

@@ -1,0 +1,132 @@
+# pyproject.toml for arcticzim
+
+
+# ============== PACKAGE CONFIG =============
+
+# build system configuration
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+# project metadata
+[project]
+name = "arcticzim"
+version = "0.1.3"
+description = "Create ZIM files from arcticshift"
+authors = [
+  { name = "IMayBeABitShy", email = "imaybeabitshy@gmail.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: File Formats",
+]
+requires-python = ">=3.7"
+dependencies = [
+    "libzim",
+    "sqlalchemy",
+    "htmlmin",
+    "jinja2",
+    "mistune",
+    "pyScss",
+]
+
+# optional dependencies
+[project.optional-dependencies]
+testing = [
+    "tox",
+]
+optimize = [
+    "minify-html",
+]
+integration = [
+    "psutil",
+    "setproctitle",
+]
+
+# CLI
+[project.scripts]
+arcticzim = "arcticzim.cli:main"
+
+# wheel generation
+[tool.hatch.build.targets.wheel]
+packages = ["arcticzim"]
+
+# project urls
+[project.urls]
+"Homepage" = "https://github.com/imaybeabitshy/arcticzim"
+"Bug Tracker" = "https://github.com/imaybeabitshy/arcticzim/issues"
+
+
+# ============== TOX/TESTING CONFIG =============
+
+# tox core configuration
+[tool.tox]
+requires = ["tox>=4.22"]
+env_list = [
+    "static",
+    "docs",
+#    "testdocs",
+]
+
+# unittest environment
+[tool.tox.env_run_base]
+description = "Run unittests"
+#depends = [
+#    "pullzimtests",
+# ]
+deps = [
+    "pytest",
+    "pytest-cov",
+    "pytest-timeout",
+    ".[testing]",
+]
+commands = [
+    ["pytest", "--showlocals", "--log-level=debug", "--cov=pyzim", "--cov-branch", "--cov-report", "html:html/coverage", "--cov-report", "term", "--timeout", "5", "--verbose", "tests/", ],
+]
+
+[tool.tox.env.static]
+description = "Run static code analysis"
+deps = [
+    "flake8",
+]
+commands = [
+    ["flake8", "--max-line-length", "99999", "arcticzim", ],
+]
+
+[tool.tox.env.static_tests]
+description = "Run static code analysis on test code"
+deps = [
+    "flake8",
+]
+commands = [
+    ["flake8", "--max-line-length", "99999", "tests", ],
+]
+
+[tool.tox.env.docs]
+description = "Generate documentation"
+# basepython = "python3.9"
+deps = [
+    "pydoctor",
+]
+commands = [
+    ["pydoctor", "--project-name=ArcticZim", "--project-version=0.0.1", "--project-url=https://github.com/IMayBeABitShy/arcticzim", "--intersphinx", "https://docs.python.org/3/objects.inv", "--intersphinx", "https://python-libzim.readthedocs.io/en/latest/objects.inv", "--intersphinx", "https://docs.sqlalchemy.org/en/21/objects.inv", "--intersphinx", "https://jinja.palletsprojects.com/en/stable/objects.inv",  "--warnings-as-errors", "--make-html", "--html-output", "html/apidocs", "arcticzim", ],
+]
+
+[tool.tox.env.testdocs]
+depends = [
+    "docs",
+]
+description = "Generate test documentation"
+# basepython = "python3.9"
+deps = [
+    "pydoctor",
+]
+commands = [
+    ["pydoctor", "--project-name=ArcticZim Tests", "--project-version=0.0.1", "--project-url=https://github.com/IMayBeABitShy/arcticzim", "--intersphinx", "https://docs.python.org/3/objects.inv", "--intersphinx", "python-libzim.readthedocs.io/en/latest/objects.inv", "--intersphinx", "https://docs.sqlalchemy.org/en/21/objects.inv", "--intersphinx", "file://html/apidocs/objects.inv", "--warnings-as-errors", "--make-html", "--html-output", "html/testdocs", "tests", ],
+]
+

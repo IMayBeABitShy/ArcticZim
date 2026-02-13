@@ -1,0 +1,8 @@
+{# This is a short info of a subreddit. Expects "subreddit_info" and "to_root" argument. #}
+
+<A class="subredditinfo-link" href="{{ to_root }}/r/{{ subreddit_info.name }}/">
+    <DIV class="subredditinfo">
+        <H1>r/{{subreddit_info.name}}</H1>
+        <P>{{ subreddit_info.posts }} posts</P>
+    </DIV>
+</A>

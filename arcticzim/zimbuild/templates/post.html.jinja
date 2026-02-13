@@ -1,0 +1,20 @@
+{# This is a post (without the page). Expects "post" and "to_root" argument. #}
+
+<DIV class="post">
+    {% block post %}
+        {% with to_root=to_root, post=post, with_subreddit=false %}
+            {% include "postsummary.html.jinja" %}
+        {% endwith %}
+        {% with to_root=to_root, post=post %}
+            {% include "postbody.html.jinja" %}
+        {% endwith %}
+        {% with post=post, to_root=to_root %}
+            {% include "postutillinks.html.jinja" %}
+        {% endwith %}
+    {% endblock %}
+</DIV>
+<DIV class="comments">
+    {% with to_root=to_root, comments=post.root_comment.children, layer=0 %}
+        {% include "commentlist.html.jinja" %}
+    {% endwith %}
+</DIV>

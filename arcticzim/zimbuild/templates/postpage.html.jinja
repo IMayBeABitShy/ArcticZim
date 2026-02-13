@@ -1,0 +1,26 @@
+{# This is a page for a post. Expects "post" and "to_root" argument. #}
+{% extends "base.html.jinja" %}
+
+{% block htmlmeta %}
+    {{ super() }}
+    <META name="author" content="{{ post.author.name|escape }}">
+    <META name="keywords" content="Score: {{ post.score }}, Comments: {{ post.comments|length - 1 }}, Type: Post">
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ to_root }}/scripts/collapser.js"></script>
+{% endblock %}
+
+{% block title %}
+    <TITLE>{{ post.title }}</TITLE>
+{% endblock %}
+
+{% block bannertext %}
+    <A href="{{ to_root }}/r/{{ post.subreddit.name }}/"><H1 class="bannertext">r/{{ post.subreddit.name }}</H1></A>
+{% endblock %}
+
+{% block content %}
+    {% with to_root=to_root, post=post %}
+        {% include "post.html.jinja" %}
+    {% endwith %}
+{% endblock %}

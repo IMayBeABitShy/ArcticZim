@@ -1,0 +1,25 @@
+{# This is a base for user pages. Expects "user" and "to_root" argument. #}
+{% extends "base.html.jinja" %}
+
+{% block htmlmeta %}
+    {{ super() }}
+    <META name="author" content="{{ user.name }}">
+{% endblock %}
+
+{% block bannertext %}
+    <A href="{{ to_root }}/u/{{ user.name }}/"><H1 class="bannertext">u/{{ user.name }}</H1></A>
+{% endblock %}
+
+{% block content %}
+    <DIV class="usernav">
+        <A href="../posts_top_page_1/">Top Posts</A>
+        <A href="../posts_new_page_1/">New Posts</A>
+        <A href="../comments_top_page_1/">Top Comments</A>
+        <A href="../comments_new_page_1/">New Comments</A>
+        {% if options.with_stats %}
+            <A href="../statistics/">Statistics</A>
+        {% endif %}
+    </DIV>
+    {% block usercontent %}
+    {% endblock %}
+{% endblock %}

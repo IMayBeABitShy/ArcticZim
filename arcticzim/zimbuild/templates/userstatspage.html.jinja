@@ -1,0 +1,15 @@
+{# This is a statistics page for a user. Expects "user", "stats" and "to_root" argument. #}
+{% extends "userbase.html.jinja" %}
+
+{% block title %}
+    <TITLE>u/{{ user.name }} - Statistics</TITLE>
+{% endblock %}
+
+{% block usercontent %}
+    <CENTER>
+        <H2>Statistics</H2>
+        {% with post_statistics=stats, to_root=to_root %}
+            {% include "postliststatistics.html.jinja" %}
+        {% endwith %}
+    </CENTER>
+{% endblock %}

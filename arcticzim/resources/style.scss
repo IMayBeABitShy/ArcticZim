@@ -1,0 +1,498 @@
+/*
+ * SCSS file for arcticzim
+ * You can specify a theme by setting the "theme" variable.
+ */
+
+// color configuration
+
+$background_color: white;
+$middleground_color: white;
+$foreground_color: #eeeeee;
+$feature_color: #ccc;
+$text_color: #2a2a2a;
+$light_text_color: #808080;
+$focus_color: #d3d3d3;
+$link_color: blue;
+$button_text_color: black;
+$navigation_background_color: #333399;
+$navigation_foreground_color: #ffffff;
+$list_background_color_odd: white;
+$list_background_color_even: scale-color(#ddd, $lightness: 10%);
+$comment_background_color_odd: $middleground_color;
+$comment_background_color_even: scale-color(#ddd, $lightness: 10%);
+$banner_color: skyblue;
+$uilink_color: black;
+$ui_background_color: lightgray;
+$ui_border_color: gray;
+
+
+@if $theme == light {
+  // the light theme is actually the default, so change the above
+  // variables instead. these ones here are only for reference
+
+  // $background_color: white !global;
+  // $middleground_color: white !global;
+  // $feature_color: #ccc !global;
+  // $text_color: #2a2a2a !global;
+  // $light_text_color: #353535 !global;
+  // $focus_color: #d3d3d3 !global;
+  // $link_color: blue !global;
+  // $button_text_color: black !global;
+  // $navigation_background_color: #333399 !global;
+  // $navigation_foreground_color: #ffffff !global;
+  // $list_background_color_odd: white !global;
+  // $list_background_color_even: scale-color(#ddd, $lightness: 10%) !global;
+} @else if $theme == dark {
+  $background_color: #333 !global;
+  $middleground_color: scale-color(#000, $lightness: 20%) !global;
+  $feature_color: #808080 !global;
+  $text_color: white !global;
+  $light_text_color: #c5c5c5;
+  $focus_color: #888 !global;
+  $link_color: lightblue  !global;
+  $button_text_color: white !global;
+  $navigation_background_color: #000 !global;
+  $navigation_foreground_color: #ffffff !global;
+  $list_background_color_odd: #555 !global;
+  $list_background_color_even: #888 !global;
+} @else {
+  @error "Unknown theme #{$theme}";
+}
+
+// mix-ins
+
+@mixin button {
+  color: $text_color;
+  background: $focus_color;
+  border: 1px solid $feature_color;
+  border-radius: 0.3125em;
+  padding: 0.5em;
+  margin: 0.3125em;
+  text-decoration: none;
+
+  &:hover {
+    background: darken(rgba($focus_color), 10%);
+  }
+
+  A {
+    color: $text_color;
+  }
+}
+
+@mixin box {
+  background: $middleground_color;
+  border: 1px solid $feature_color;
+  margin: 1em;
+  padding: 1em;
+}
+
+@mixin alternating_list($childselector) {
+  #{$childselector}:nth-child(even) {
+    background: $list_background_color_even;
+  }
+
+  #{$childselector}:nth-child(odd) {
+    background: $list_background_color_odd;
+  }
+}
+
+/* general layout */
+
+html {
+  height: webkit-fit-available;
+  background-color: $background_color;
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0em;
+  min-height: 100vh;
+  min-height: -webkit-fit-available;
+}
+
+P, H1, H2, H3, TR, TH, LI {
+  color: $text_color;
+}
+
+A {
+  color: $link_color;
+}
+
+/* navigation and banner */
+
+.nav {
+  background-color: $middleground_color;
+  font-size: 75%;
+  color: $light_text_color;
+  border-bottom: 1px solid $feature_color;
+
+  A {
+    background-color: $middleground_color;
+    margin: 0.25em;
+    font-size: 75%;
+    color: $light_text_color;
+    text-decoration: none;
+
+    &:first-of-type {
+      margin-left: 3em;
+    }
+  }
+}
+
+.banner {
+  padding-top: 3em;
+  padding-bottom: 2px;
+  padding-left: 2em;
+  background-color: $banner_color;
+  border-bottom: 1px solid $feature_color;
+
+  A {
+    text-decoration: none;
+  }
+}
+
+/* content container - use content-cntr to reduce html size */
+.content-cntr {
+  padding: 0.625em;
+}
+
+/* posts and comments */
+
+.post {
+  border: 1px solid $feature_color;
+  padding: 1em;
+  padding-left: 4em;
+  padding-bottom: 0.5em;
+}
+
+.postbody {
+  padding-left: 1em;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+  border: 1px solid $feature_color;
+}
+
+.posttitle-container {
+  display: flex;
+  flex-direction: row;
+}
+
+.postscore {
+  color: $light_text_color;
+}
+
+.posticon {
+  margin: 1em;
+  height: 4em;
+  width: auto;
+}
+
+.posttitle {
+  margin: 0;
+
+  A {
+    text-decoration: none;
+  }
+}
+
+.postmeta, .postmeta2, .commentmeta2 {
+  color: $light_text_color;
+  font-size: 80%;
+  margin: 0;
+}
+
+.postmeta {
+  display: inline;
+}
+
+.postmeta2, .commentmeta2 {
+  /* NOTE: in addition to the previous combined section of postmeta1 and postmeta2 */
+  margin-bottom: 0.25em;
+
+  A {
+    margin-right: 1em;
+    color: $light_text_color;
+    text-decoration: none;
+  }
+}
+
+.commentmeta2 {
+  margin-top: 0.25em;
+}
+
+.comments {
+  border: 1px solid #ccc;
+  margin-top: 1em;
+  padding-top: 1em;
+  padding-bottom: 1em;
+}
+
+.comment {
+  border: 1px solid $feature_color;
+  padding-left: 1em;
+  padding-bottom: 0.5em;
+}
+
+.comment-layer-1 {
+    background-color: $comment_background_color_odd;
+}
+
+.comment-layer-2 {
+    background-color: $comment_background_color_even;
+}
+
+.commentlist {
+  padding-left: 1em;
+}
+
+.collapser {
+    cursor: pointer;
+}
+
+.commenttitle, .inactive-commenttitle, .commentflair {
+  margin-right: 1em;
+  font-size: 80%;
+  color: scale-color($light_text_color, $lightness: 10%);
+  display: inline;
+
+  B {
+    color: initial;
+  }
+}
+
+.commentflair, .postflair, .authorflair {
+  display: inline;
+  border: 1px solid $feature_color;
+  border-radius: 0.5em;
+  height: fit-content;
+  padding: 0.1em;
+}
+
+.postflair {
+  margin-left: 0.5em;
+}
+
+.mdbody pre {
+  border: 1px solid $feature_color;
+  background-color: $foreground_color;
+  padding: 0.5em;
+  margin-left: 1em;
+}
+
+.authorlink {
+  color: $link_color;
+  text-decoration: none;
+}
+
+.distinguished-submmitter .authorlink {
+  background-color: darkblue;
+  color: white;
+  padding: 0.2em;
+  border-radius: 0.5em;
+}
+
+.distinguished-moderator .authorlink {
+  background-color: darkgreen;
+  color: white;
+  padding: 0.2em;
+  border-radius: 0.5em;
+}
+
+/* subreddits */
+
+.subredditnav, .usernav {
+  background: $ui_background_color;
+  border: 1px solid $ui_border_color;
+  padding: 2px;
+  padding-left: 2em;
+  padding-bottom: 4px;
+
+  A {
+    margin-right: 2em;
+    text-decoration: none;
+    color: $uilink_color;
+    border-bottom: 1px dotted $uilink_color;
+  }
+}
+
+.postlist {
+  border: 1px solid $feature_color;
+  margin-top: 1em;
+  margin-bottom: 1em;
+
+ .postsummary {
+    padding-left: 2em;
+    padding-right: 2em;
+    padding-top: 0.5em;
+    padding-bottom: 0.5em;
+    border: 1px solid $feature_color;
+  }
+}
+
+.subredditlink {
+  text-decoration: none;
+}
+
+/* user */
+.usercomments {
+  padding-left: 1em;
+}
+.postcomment-container {
+  margin-bottom: 2em;
+
+  .comment {
+    margin-left: 4em;
+  }
+}
+
+/* stats */
+
+.poststatistics {
+    @include alternating_list("TR");
+
+    TD:nth-child(even) {
+        text-align: right;
+    }
+}
+
+.poststatistics-container {
+  border: 1px solid $feature_color;
+  border-radius: 1em;
+  width:fit-content;
+  padding: 1em;
+  margin-top: 2em;
+}
+
+
+/* index page */
+.welcomediv {
+  background: $middleground_color;
+  border: 1px solid $feature_color;
+  border-radius: 1.5em;
+  margin: 2em;
+  padding: 1em;
+}
+
+.subredditlist {
+  UL {
+    list-style-type: none;
+    columns: 2;
+    -webkit-columns: 2;
+    -moz-columns: 2;
+  }
+}
+
+.subredditinfo {
+  padding: 0.5em;
+  padding-left: 2em;
+  padding-right: 2em;
+  border: 1px solid $feature_color;
+  border-radius: 1em;
+  background-color: $foreground_color;
+  display: inline-block;
+  width: 100%;
+}
+
+.subredditinfo-link {
+  text-decoration: none;
+  color: $text_color;
+}
+
+/* info and license page */
+
+.infodiv {
+    padding-left: 4em;
+    padding-right: 4em;
+}
+
+.infosubdiv, .license {
+  padding: 1em;
+  border: 1px solid lightgray;
+  border-radius: 1em;
+  margin-bottom: 1em;
+  background-color: $middleground_color;
+
+  PRE {
+    display: inline;
+  }
+
+  .licensetext-container {
+    margin: 1em;
+    padding: 1em;
+  }
+
+  .licensetext, .licensetext-container {
+    background-color: $foreground_color;
+  }
+}
+
+/* pagination */
+.page_buttons {
+  border: 1px solid $ui_border_color;
+  padding-left: 2em;
+  padding-top: 0.4em;
+  padding-bottom: 0.4em;
+  background-color: $ui_background_color;
+}
+
+.page_button {
+  display: inline-block;
+  border: 1px solid $ui_border_color;
+  padding: 0.25em;
+
+  A {
+    text-decoration: none;
+    color: $uilink_color;
+  }
+}
+
+.cur_page_button {
+  border-bottom: 1px solid $uilink_color;
+}
+
+/* css code for autocomplete from https://www.w3schools.com/howto/howto_js_autocomplete.asp */
+
+.autocomplete {
+  position: relative;
+  display: inline-block;
+  flex-wrap: nowrap;
+}
+
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+.autocomplete-items div {
+  padding: 0.625em;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+  /*! display: initial; */
+}
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #e9e9e9;
+}
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: DodgerBlue !important;
+  color: #ffffff;
+}
+
+/* mobile */
+
+@media only screen and (max-width: 920px) {
+}
+
+/* for even smaller screens, mainly smartphones in portrait mode */
+
+@media only screen and (max-width: 414px) {
+}

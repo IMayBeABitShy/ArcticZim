@@ -1,0 +1,28 @@
+{# This is a single comment. Expects "comment", "layer", "with_children", "with_util_links" and "to_root" arguments. #}
+
+<DIV class="comment comment-layer-{{ layer % 2 + 1 }}" id="comment-{{ comment.id }}">
+    <P class="commenttitle{{ " distinguished-" + comment.distinguished_class if comment.distinguished_class is not none else "" }}">
+        <A class="collapser">[-]</A>
+        <A class="authorlink" href="{{ to_root }}/u/{{ comment.author.name|escape }}/">{{ comment.author.name|escape }}</A>
+        {% if comment.author_flair_text %}
+            <P class="commentflair authorflair" style="color: {{ comment.author_flair_text_color|default("", true) }}">{{ comment.author_flair_text}}</P>
+        {% endif %}
+        <B>{{ comment.score }} points</B>
+        on {{ comment.created_utc|format_timestamp }}
+    </P>
+    <DIV class="commentcontent">
+        <DIV class="commentbody mdbody">
+            {{ comment.body|render_comment_text }}
+        </DIV>
+        {% if with_children and comment.children|length > 0 %}
+            {% with to_root=to_root, layer=layer+1, with_util_links=with_util_links, comments=comment.children %}
+                {% include "commentlist.html.jinja" %}
+            {% endwith %}
+        {% endif %}
+    </DIV>
+    {% if with_util_links|default(true) %}
+        {% with post=post, to_root=to_root %}
+            {% include "commentutillinks.html.jinja" %}
+        {% endwith %}
+    {% endif %}
+</DIV>

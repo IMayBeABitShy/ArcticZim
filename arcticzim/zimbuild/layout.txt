@@ -1,0 +1,81 @@
+This file describes the ZIM layout.
+
+
++-/
+| The root directory, redirects to index.html
+|
++---index.html
+|   The main page.
+|
++-+-info/
+| | Information pages
+| |
+| +---licenses/
+|     Licenses and other attributions.
+|
++---statistcs/
+|   The global statistics
+|
++-+-subreddits/
+| | A list of subreddits, paginated
+| |
+| +---subreddits_page_PAGE/
+|     A specific page of the list of subreddits
+|
++---style_THEME.css
+|   The style for the specified theme
+|
++---favicon.png
+|   The favicon
+|
++-+-r/
+| | Subreddits and posts
+| |
+| +-+-SUBREDDIT/
+|   | Post lists of this subreddit
+|   |
+|   +-+-POST/
+|   | | A post and the comments
+|   | |
+|   | +---poll.json
+|   |     If applicable, poll data as json
+|   |
+|   +---SORT_page_PAGE/
+|   |   A page of all posts in this subreddit in the specified order
+|   |
+|   +---statistics/
+|       Subreddit statistics
+|
++-+-u/
+| | Users
+| |
+| +-+-NAME/
+|   | a user page
+|   |
+|   +---TYPE_SORT_page_PAGE/
+|   |   A page of all TYPE made by this user in the specified order
+|   |
+|   +---statistics/
+|       The user statistics
+|
++-+-icons/
+| | various icons
+| |
+| +---NAME.png
+|     a specific icon
+|
++-+-scripts/
+  | Script files
+  |
+  +---jquery.js
+  |   A copy of the jquery library
+  |
+  +---chart.js
+  |   The chart.js script
+  |
+  +---collapser.js
+  |   A script handling the collapsing of content
+  |
+  +---preview.js
+      A script for showing the preview of posts in a list of posts
+

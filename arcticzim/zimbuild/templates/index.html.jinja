@@ -1,0 +1,28 @@
+{# This is the indexpage. Expects "publishers", "to_root" arguments.#}
+{% extends "base.html.jinja" %}
+
+{% block title %}
+    <TITLE>ZimFiction - Welcome!</TITLE>
+{% endblock %}
+
+{% block content %}
+    <H1 class="index_title">Welcome to ZimFiction!</H1>
+    <DIV class="index_explanation">
+        <P>ZimFiction contains fanfiction collected from various sources, organized by the publisher.</P>
+    </DIV>
+    <DIV class="publisher_list">
+        <UL>
+            {% for publisher in publishers|sort(attribute="num_stories", reverse=True) %}
+                <LI>
+                    <A class="publisher_div_link" href="{{ to_root }}/publisher/{{ publisher.name }}/">
+                        <DIV class="publisher">
+                            <P class="publisher_name">{{ publisher.name }}</P>
+                            <P class="publisher_num_categories">{{ publisher.categories|length|format_number }} Categories</P>
+                            <P class="publisher_num_stories">{{ publisher.num_stories|format_number }} Stories</P>
+                        </DIV>
+                    </A>
+                </LI>
+            {% endfor %}
+        </UL>
+    </DIV>
+{% endblock %}

@@ -1,0 +1,10 @@
+{# This file contains the the page button for the current page. Expects "to_root", "pagenum", "prefix" and optional "label" arguments. #}
+{% extends "pagebutton.html.jinja" %}
+
+{% block button_opener %}
+    <DIV class="page_button cur_page_button">
+{% endblock %}
+
+{% block button_content %}
+    <A class="page_button_link cur_page_button_link" href="../{{ prefix }}_page_{{ pagenum }}/{{ fragment|default("") }}">{{ label|default(pagenum) }}</A>
+{% endblock %}

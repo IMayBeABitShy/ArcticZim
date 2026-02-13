@@ -1,0 +1,11 @@
+{# This is a klist of posts. Expects "posts", "with_subreddit" and "to_root" argument. #}
+
+<DIV class="postlist">
+    {% block postlist %}
+        {% for post in posts %}
+            {% with post=post, to_root=to_root, with_subreddit=with_subreddit, with_util_links=true %}
+                {% include "postsummary.html.jinja" %}
+            {% endwith %}
+        {% endfor %}
+    {% endblock %}
+</DIV>

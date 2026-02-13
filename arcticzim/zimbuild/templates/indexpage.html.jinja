@@ -1,0 +1,19 @@
+{# This is the index page. Expects "subreddit_infos" and "to_root" argument. #}
+{% extends "base.html.jinja" %}
+
+{% block title %}
+    <TITLE>Welcome to ArcticZim!</TITLE>
+{% endblock %}
+
+{% block content %}
+    <DIV class="welcome welcomediv">
+        <H1 class="welcomeheader">Welcome to ArcticZim!</H1>
+        <P class="welcometext">This ZIM file contains some historical reddit data. For quick navigation, try using <I>r/subname</I> in the searchbar. See the information page linked above for more details.</P>
+    </DIV>
+    <DIV class="welcomediv">
+        <H1>Top Subreddits</H1>
+        {% with to_root=to_root, subreddit_infos=subreddit_infos %}
+            {% include "subredditlist.html.jinja" %}
+        {% endwith %}
+    </DIV>
+{% endblock %}

@@ -1,0 +1,38 @@
+{# This is the information page. Expects "to_root" argument. #}
+{% extends "base.html.jinja" %}
+
+{% block title %}
+    <TITLE>ArcticZim - Informations</TITLE>
+{% endblock %}
+
+{% block bannertext %}
+    <H1 class="bannertext">Informations</H1>
+{% endblock %}
+
+{% block content %}
+    <DIV class="infodiv">
+        <P class="infotext">This page contains various help resources about this ZIM.</P>
+
+        <DIV class="infosubdiv">
+            <H2 class="infosubheader">What is this?</H2>
+            <P class="infotext">You are currently viewing a ZIM file generated from a subset of ArcticShift data. A ZIM file is basically a offline copy of a website. ArcticShift is an aggregator for historical reddit data. Thus, this is an offline version of parts of reddit.</P>
+        </DIV>
+
+        <DIV class="infosubdiv">
+            <H2 class="infosubheader">How do I use this ZIM file?</H2>
+            <P class="infotext">Seeing that you are reading this text, you have already succeeded in opening the ZIM file with a ZIM reader, so you've already done the 'hard' part.</P>
+            <P class="infotext">Here are some tips that may help you browse this ZIM file more efficiently:</P>
+            <UL>
+                <LI>If your ZIM reader supports the Xapian search (most do), then you can use the search to navigate quickly. You can, for example, input 'r/kiwix' and should get a suggestion that when clicked gets you to r/kiwix.</LI>
+                <LI><B>Note:</B> Some ZIM readers, kiwix being the most well-known example, use the same search bar for suggestions and the search. These are, however, different things. You may get different results when entering a text in the search bar without pressing enter compared to starting a search by pressng enter</LI>
+                <LI>You can collapse comment trees by pressing the <pre>[-]</pre> next to them. This requires javascript to be enabled.</LI>
+                <LI>You can expand previews of posts by pressing the symbol next to the title.</LI>
+            </UL>
+        </DIV>
+
+        <DIV class="infosubdiv">
+            <H2 class="infosubheader">Links</H2>
+            <A class="infolink" href="{{ to_root }}/info/licenses/">Licenses</A>
+        </DIV>
+    </DIV>
+{% endblock %}

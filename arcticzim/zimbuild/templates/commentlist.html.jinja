@@ -1,0 +1,9 @@
+{# This is a list of comments. Expects "comments", "layer", "with_util_links", and "to_root" arguments. #}
+
+<DIV class="commentlist">
+    {% for comment in comments %}
+        {% with to_root=to_root, layer=layer, with_children=true, with_util_links=with_util_links, comment=comment %}
+            {% include "comment.html.jinja" %}
+        {% endwith %}
+    {% endfor %}
+</DIV>

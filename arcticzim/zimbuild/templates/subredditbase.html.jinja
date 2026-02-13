@@ -1,0 +1,30 @@
+{# This is a base for a subreddit page. Expects "subreddit", and "to_root" argument. #}
+{% extends "base.html.jinja" %}
+
+{% block title %}
+    <TITLE>r/{{ subreddit.name }}</TITLE>
+{% endblock %}
+
+{% block bannertext %}
+    <A href="{{ to_root }}/r/{{ subreddit.name }}/"><H1 class="bannertext">r/{{ subreddit.name }}</H1></A>
+{% endblock %}
+
+{% block content %}
+    <DIV class="subredditnav">
+        <A href="../top_page_1/">Top</A>
+        <A href="../new_page_1/">New</A>
+        {% if options.with_stats %}
+            <A href="../statistics/">Statistics</A>
+        {% endif %}
+    </DIV>
+    {% block subredditcontent %}
+        <DIV class="subredditposts">
+            {% with to_root=to_root, posts=posts %}
+                {% include "postlist.html.jinja" %}
+            {% endwith %}
+        </DIV>
+        {% with to_root=to_root, num_pages=num_pages, cur_page=cur_page, prefix=sort %}
+            {% include "pagebuttons.html.jinja" %}
+        {% endwith %}
+    {% endblock %}
+{% endblock %}

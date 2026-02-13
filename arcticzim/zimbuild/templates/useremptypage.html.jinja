@@ -1,0 +1,6 @@
+{# This is a page showing that the user has not made specific contributions. Expects "user", "part" and "to_root" argument. #}
+{% extends "userbase.html.jinja" %}
+
+{% block usercontent %}
+    <P class="no-content">This user has not made any {{ part }}.</P>
+{% endblock %}

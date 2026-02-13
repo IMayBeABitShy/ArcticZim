@@ -1,0 +1,42 @@
+{# The base template provides the basic strucure for all HTML pages #}
+{# Generally speaking, each template has access to the 'options' global, a couple of custom filters, as well as various individual arguments #}
+{# One nearly always expected argument is "to_root", which indicates a path prefix (ecluding trailing /) to turn a path into a relative path to the root path #}
+<!DOCTYPE html>
+<HTML>
+    <HEAD>
+        {% block head %}
+            {% block htmlmeta %}
+                <META http-equiv="Content-Type" content="text/html;charset=UTF-8">
+                <META name=viewport content="width=device-width, initial-scale=1, maximum-scale=1">
+                <link rel="icon" type="image/png" href="{{ to_root }}/favicon.png">
+            {% endblock %}
+            {% block title %}
+                <TITLE>ZimFiction</TITLE>
+            {% endblock %}
+            {% block css %}
+                <link rel="stylesheet" href="{{ to_root }}/style_light.css">
+                <link rel="stylesheet" href="{{ to_root }}/style_dark.css" media="(prefers-color-scheme: dark)">
+            {% endblock %}
+            {% block scripts %}
+            {% endblock %}
+        {% endblock %}
+    </HEAD>
+    <BODY>
+        {% block body %}
+            {% block navigation %}
+                {% include "navigation.html.jinja" %}
+            {% endblock %}
+            {% block banner %}
+                <DIV class="banner">
+                    {% block bannertext %}
+                        <A href="{{ to_root }}/"><H1 class="bannertext">ArcticZim</H1></A>
+                    {% endblock %}
+                </DIV>
+            {% endblock %}
+            <DIV class="content-cntr">
+                {% block content %}
+                {% endblock %}
+            </DIV>
+        {% endblock %}
+    </BODY>
+</HTML>

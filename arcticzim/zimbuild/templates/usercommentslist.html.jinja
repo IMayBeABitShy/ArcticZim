@@ -1,0 +1,14 @@
+{# This is a list of comments made by a user. Expects "comments" and "to_root" arguments. #}
+
+<DIV class="commentlist usercomments">
+    {% for comment in comments %}
+        <DIV class="postcomment-container">
+            {% with post=comment.post, to_root=to_root, with_subreddit=true, with_util_links=true %}
+                {% include "postsummary.html.jinja" %}
+            {% endwith %}
+            {% with to_root=to_root, layer=1, with_children=false, with_util_links=true, comment=comment %}
+                {% include "comment.html.jinja" %}
+            {% endwith %}
+        </DIV>
+    {% endfor %}
+</DIV>

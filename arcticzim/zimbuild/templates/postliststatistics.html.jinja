@@ -1,0 +1,32 @@
+{# This is a statistics page. Expects "post_statistics" and "to_root" argument. #}
+
+<DIV class="poststatistics-container">
+    <TABLE class="poststatistics">
+        <TR>
+            <TH>Name</TH>
+            <TH>Value</TH>
+        </TR>
+        {% for name, value in (
+            ("Total posts", post_statistics.count|default(0, true)|format_number),
+            ("Combined post score", post_statistics.total_score|format_number(allow_none=true)),
+            ("Lowest post score", post_statistics.min_score|format_number(allow_none=true)),
+            ("Highest post score", post_statistics.max_score|format_number(allow_none=true)),
+            ("Average post score", post_statistics.average_score|format_number(allow_none=true)),
+            ("Oldest post", post_statistics.oldest_utc|format_timestamp(allow_none=true)),
+            ("Newest post", post_statistics.newest_utc|format_timestamp(allow_none=true)),
+            ("Total comments", post_statistics.total_comments|default(0, true)|format_number),
+            ("Fewest comments", post_statistics.min_comments|format_number(allow_none=true)),
+            ("Highest comments", post_statistics.max_comments|format_number(allow_none=true)),
+            ("Number of commentors", post_statistics.num_commentors|format_number(allow_none=true)),
+            ("Average comment count", post_statistics.average_comments|format_number(allow_none=true)),
+            ("Average amount of posts submitted by posters", post_statistics.average_number_of_posts_per_poster|format_number(true)),
+            ("Average amount of comments submitted by commentors", post_statistics.average_number_of_comments_per_commentor|format_number(true)),
+            )
+        %}
+            <TR>
+                <TD>{{ name }}</TD>
+                <TD>{{ value }}</TD>
+            </TR>
+        {% endfor %}
+    </TABLE>
+</DIV>
