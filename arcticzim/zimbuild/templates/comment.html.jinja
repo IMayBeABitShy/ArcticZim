@@ -3,7 +3,7 @@
 <DIV class="comment comment-layer-{{ layer % 2 + 1 }}" id="comment-{{ comment.id }}">
     <P class="commenttitle{{ " distinguished-" + comment.distinguished_class if comment.distinguished_class is not none else "" }}">
         <A class="collapser">[-]</A>
-        <A class="authorlink" href="{{ to_root }}/u/{{ comment.author.name|escape }}/">{{ comment.author.name|escape }}</A>
+        <A class="authorlink" href="{% if options.with_users %}{{ to_root }}/u/{{ comment.author.name|escape }}/{% else %}javascript:void(0){% endif %}">{{ comment.author.name|escape }}</A>
         {% if comment.author_flair_text %}
             <P class="commentflair authorflair" style="color: {{ comment.author_flair_text_color|default("", true) }}">{{ comment.author_flair_text}}</P>
         {% endif %}

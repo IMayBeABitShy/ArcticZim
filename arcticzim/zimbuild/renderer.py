@@ -260,14 +260,20 @@ class RenderOptions(object):
 
     @ivar with_stats: if nonzero, include statistics
     @type with_stats: L{bool}
+    @ivar with_users: if nonzero, include user pages<
+    @type with_users: L{bool}
     """
-    def __init__(self, with_stats=True):
+    def __init__(self, with_stats=True, with_users=True):
         """
         The default constructor.
+
         @param with_stats: if nonzero, include statistics
         @type with_stats: L{bool}
+        @param with_users: if nonzero, include user pages<
+        @type with_users: L{bool}
         """
         self.with_stats = with_stats
+        self.with_users = with_users
 
 
 class HtmlRenderer(object):

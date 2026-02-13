@@ -19,7 +19,7 @@
     </DIV>
     <P class="postmeta">
         Posted {{ post.created_utc|format_timestamp }}
-        by <A class="authorlink" href="{{ to_root }}/u/{{ post.author.name }}/">{{ post.author.name|escape }}</A>
+        by <A class="authorlink" href="{% if options.with_users %}{{ to_root }}/u/{{ post.author.name }}/{% else %}javascript:void(0){%endif%}">{{ post.author.name|escape }}</A>
         {% if post.author_flair_text %}
             <P class="authorflair postflair" style="color: {{ post.author_flair_text_color|default("", true) }}">{{ post.author_flair_text}}</P>
         {% endif %}

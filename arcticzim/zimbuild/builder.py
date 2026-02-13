@@ -389,8 +389,10 @@ class BuildOptions(object):
     @ivar indexing: whether indexing should be enabled or not
     @type indexing: L{bool}
 
-    @param with_stats: if nonzero, include statistics
+    @ivar with_stats: if nonzero, include statistics
     @type with_stats: L{bool}
+    @ivar with_users: if nonzero, include user pages
+    @type with_users: L{bool}
 
     @ivar use_threads: if nonzero, use threads instead of processes
     @type use_threads: L{bool}
@@ -421,6 +423,7 @@ class BuildOptions(object):
 
         # content options
         with_stats=True,
+        with_users=True,
 
         # genral build_options
         log_directory=None,
@@ -471,6 +474,8 @@ class BuildOptions(object):
         @type skip_posts: L{bool}
         @param with_stats: if nonzero, include statistics
         @type with_stats: L{bool}
+        @param with_users: if nonzero, include user pages
+        @type with_users: L{bool}
         """
         self.name = name
         self.title = title
@@ -481,6 +486,7 @@ class BuildOptions(object):
         self.indexing = indexing
 
         self.with_stats = with_stats
+        self.with_users = with_users
 
         self.use_threads = bool(use_threads)
         if num_workers is None:
@@ -577,6 +583,12 @@ class BuildOptions(object):
             help="do not include statistics.",
         )
         parser.add_argument(
+            "--no-users",
+            action="store_false",
+            dest="with_users",
+            help="do not include user pages.",
+        )
+        parser.add_argument(
             "--lazy",
             action="store_false",
             dest="eager",
@@ -616,9 +628,11 @@ class BuildOptions(object):
             use_threads=ns.threaded,
             num_workers=ns.workers,
             log_directory=ns.log_directory,
-            with_stats=ns.with_stats,
             eager=ns.eager,
             memprofile_directory=ns.memprofile_directory,
+
+            with_stats=ns.with_stats,
+            with_users=ns.with_users,
             skip_posts=ns.skip_posts,
         )
         return bo
@@ -676,6 +690,7 @@ class BuildOptions(object):
         """
         options = RenderOptions(
             with_stats=self.with_stats,
+            with_users=self.with_users,
         )
         return options
 
@@ -907,25 +922,28 @@ class ZimBuilder(object):
         ):
             self._send_subreddit_tasks(session, with_stats=options.with_stats)
         # --- users ---
-        self.log(" -> Adding users...")
-        self.log("     -> Finding users... ", end="")
-        n_users = session.execute(
-            select(func.count(User.name)).where(User.name != ARCTICZIM_USERNAME)
-        ).scalar_one()
-        self.log("found {} users.".format(n_users))
-        n_tasks_per_user = 4
-        if options.with_stats:
-            # again, extra task for the stats
-            n_tasks_per_user += 1
-        with self._run_stage(
-            creator=creator,
-            options=options,
-            task_name="Adding users",
-            n_tasks=n_users*n_tasks_per_user,  # x tasks per user
-            task_multiplier=(1/n_tasks_per_user),
-            task_unit="users",
-        ):
-            self._send_user_tasks(session, with_stats=options.with_stats)
+        if options.with_users:
+            self.log(" -> Adding users...")
+            self.log("     -> Finding users... ", end="")
+            n_users = session.execute(
+                select(func.count(User.name)).where(User.name != ARCTICZIM_USERNAME)
+            ).scalar_one()
+            self.log("found {} users.".format(n_users))
+            n_tasks_per_user = 4
+            if options.with_stats:
+                # again, extra task for the stats
+                n_tasks_per_user += 1
+            with self._run_stage(
+                creator=creator,
+                options=options,
+                task_name="Adding users",
+                n_tasks=n_users*n_tasks_per_user,  # x tasks per user
+                task_multiplier=(1/n_tasks_per_user),
+                task_unit="users",
+            ):
+                self._send_user_tasks(session, with_stats=options.with_stats)
+        else:
+            self.log(" -> Skipping users!")
         # --- posts ---
         if not options.skip_posts:
             self.log(" -> Adding posts...")
