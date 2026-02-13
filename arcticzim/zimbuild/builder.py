@@ -495,6 +495,134 @@ class BuildOptions(object):
 
         self.skip_posts = skip_posts
 
+    @staticmethod
+    def add_argparse_options(parser):
+        """
+        Add all CLI options to the specified argparse parser.
+
+        @param parser: argument parser to which to add the arguments
+        @type parser: L{argparse.ArgumentParser}
+        """
+        parser.add_argument(
+            "--name",
+            action="store",
+            dest="name",
+            default="arcticzim_eng",
+            help="a human readable identifier for the ZIM",
+        )
+        parser.add_argument(
+            "--title",
+            action="store",
+            dest="title",
+            default="ArcticZim",
+            help="the title of the ZIM file",
+        )
+        parser.add_argument(
+            "--creator",
+            action="store",
+            dest="creator",
+            default="Reddit and Arctic Shift",
+            help="creator(s) of the ZIM file content",
+        )
+        parser.add_argument(
+            "--publisher",
+            action="store",
+            dest="publisher",
+            default="ArcticZim",
+            help="creator of the ZIM file itself",
+        )
+        parser.add_argument(
+            "--description",
+            action="store",
+            dest="description",
+            default="A ZIM file containing a part of reddit",
+            help="a short description of the content",
+        )
+        parser.add_argument(
+            "--language",
+            action="store",
+            dest="language",
+            default="eng",
+            help="ISO639-3 language identifier describing content language",
+        )
+        parser.add_argument(
+            "--no-indexing",
+            action="store_false",
+            dest="indexing",
+            help="disable indexing of ZIM",
+        )
+
+        parser.add_argument(
+            "--threaded",
+            action="store_true",
+            help="use threads instead of processes for workers"
+        )
+        parser.add_argument(
+            "--workers",
+            action="store",
+            type=int,
+            default=None,
+            help="use this many non-zim workers",
+        )
+        parser.add_argument(
+            "--log-directory",
+            action="store",
+            default=None,
+            help="enable logging and write logs into this directory",
+        )
+        parser.add_argument(
+            "--no-stats",
+            action="store_false",
+            dest="with_stats",
+            help="do not include statistics.",
+        )
+        parser.add_argument(
+            "--lazy",
+            action="store_false",
+            dest="eager",
+            help="Do not eager load related objects, ...",
+        )
+        parser.add_argument(
+            "--memprofile-directory",
+            action="store",
+            default=None,
+            help="enable memory profile and write into this directory",
+        )
+        parser.add_argument(
+            "--debug-skip-posts",
+            action="store_true",
+            dest="skip_posts",
+            help="do not include posts (debug option)",
+        )
+
+    @classmethod
+    def from_ns(cls, ns):
+        """
+        Instantiate build options from a namespace returned by a parser.
+        This method assumes that the parser was preprared using L{BuildOptions.add_argparse_options}.
+
+        @param ns: namespace containg the arguments
+        @type ns: L{argparse.Namespace}
+        """
+        bo = cls(
+            name=ns.name,
+            title=ns.title,
+            creator=ns.creator,
+            publisher=ns.publisher,
+            description=ns.description,
+            language=ns.language,
+            indexing=ns.indexing,
+
+            use_threads=ns.threaded,
+            num_workers=ns.workers,
+            log_directory=ns.log_directory,
+            with_stats=ns.with_stats,
+            eager=ns.eager,
+            memprofile_directory=ns.memprofile_directory,
+            skip_posts=ns.skip_posts,
+        )
+        return bo
+
     def get_metadata_dict(self):
         """
         Return a dictionary encoding the ZIM metadata described by this file.

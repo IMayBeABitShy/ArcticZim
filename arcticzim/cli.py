@@ -70,15 +70,7 @@ def run_build(ns):
     """
     connection_config = _connection_config_from_ns(ns)
     builder = ZimBuilder(connection_config)
-    build_options = BuildOptions(
-        use_threads=ns.threaded,
-        num_workers=ns.workers,
-        log_directory=ns.log_directory,
-        with_stats=ns.with_stats,
-        eager=ns.eager,
-        memprofile_directory=ns.memprofile_directory,
-        skip_posts=ns.skip_posts,
-    )
+    build_options = BuildOptions.from_ns(ns)
     builder.build(ns.outpath, options=build_options)
 
 
@@ -146,54 +138,7 @@ def main():
         action="store",
         help="path to write ZIM to",
     )
-    build_parser.add_argument(
-        "--threaded",
-        action="store_true",
-        help="use threads instead of processes for workers"
-    )
-    build_parser.add_argument(
-        "--workers",
-        action="store",
-        type=int,
-        default=None,
-        help="use this many non-zim workers",
-    )
-    build_parser.add_argument(
-        "--log-directory",
-        action="store",
-        default=None,
-        help="enable logging and write logs into this directory",
-    )
-    build_parser.add_argument(
-        "--no-stats",
-        action="store_false",
-        dest="with_stats",
-        help="do not include statistics.",
-    )
-    build_parser.add_argument(
-        "--lazy",
-        action="store_false",
-        dest="eager",
-        help="Do not eager load related objects, ...",
-    )
-    build_parser.add_argument(
-        "--memprofile-directory",
-        action="store",
-        default=None,
-        help="enable memory profile and write into this directory",
-    )
-    build_parser.add_argument(
-        "--no-external-links",
-        action="store_false",
-        dest="include_external_links",
-        help="do not include external links to the works",
-    )
-    build_parser.add_argument(
-        "--debug-skip-posts",
-        action="store_true",
-        dest="skip_posts",
-        help="do not include posts (debug option)",
-    )
+    BuildOptions.add_argparse_options(build_parser)
 
     ns = parser.parse_args()
 
