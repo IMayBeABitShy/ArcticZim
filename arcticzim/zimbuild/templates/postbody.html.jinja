@@ -3,8 +3,8 @@
 <DIV class="postbody" id="postbody">
     {% block postbody %}
         {% if post.post_hint == "image" %}
-            <img class="postimage" src="{{ post.url }}"></image>
+            <img class="postimage" src="{{ post.url|rewrite_url(to_root) }}"></image>
         {% endif %}
-        <DIV class="postbodytext mdbody"> {{ post.selftext|render_post_text }}</DIV>
+        <DIV class="postbodytext mdbody"> {{ post.selftext|render_post_text(to_root=to_root) }}</DIV>
     {% endblock %}
 </DIV>

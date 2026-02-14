@@ -12,7 +12,7 @@
     </P>
     <DIV class="commentcontent">
         <DIV class="commentbody mdbody">
-            {{ comment.body|render_comment_text }}
+            {{ comment.body|render_comment_text(to_root=to_root) }}
         </DIV>
         {% if with_children and comment.children|length > 0 %}
             {% with to_root=to_root, layer=layer+1, with_util_links=with_util_links, comments=comment.children %}

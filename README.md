@@ -9,6 +9,7 @@ This project is still a work-in-progress.
 **Supported features:**
 
  - text-posts are implemented
+ - partial media support has been implemented
  - comment trees rendered
    - can be collapsed
  - subreddit pages are implemented
@@ -19,7 +20,7 @@ This project is still a work-in-progress.
 
 **Missing/planned features:**
 
- - media posts
+ - some media (video, gallery) posts
  - crossposts
  - polls
  - subreddit wikis
@@ -65,7 +66,13 @@ Simply run `arcticzim import --posts-file <path/to/posts/file> --comments-file <
 
 **Example:** let's assume you've downloaded r/kiwix, then the command would be `arcticzim import --posts-file r_kiwix_posts.jsonl --comments-file r_kiwix_comments.jsonl "sqlite:///db.sqlite"`
 
-### Step 5: Build the ZIM file.
+### Step 5: Download media
+
+Now, let's download images, videos and so on. This step is optional, you can choose not to download any media.
+
+Simply run `arcticzim download-media --media-dir <path/to/store/media/in> <database-url>` and wait.
+
+### Step 6: Build the ZIM file.
 
 It's time to build the ZIM file. Now, before we get started, here are some important notes:
 

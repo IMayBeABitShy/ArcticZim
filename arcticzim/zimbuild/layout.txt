@@ -64,6 +64,12 @@ This file describes the ZIM layout.
 | +---NAME.png
 |     a specific icon
 |
++-+-media/
+| | media files in ZIM
+| |
+| +---UID
+|     A specific media file
+|
 +-+-scripts/
   | Script files
   |

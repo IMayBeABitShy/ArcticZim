@@ -9,7 +9,7 @@
             <img class="posticon" src="{{ to_root }}/icons/icon_{{ post.icon_name }}.png"></img>
         {% endblock %}
         {% block posttitle %}
-            <H1 class="posttitle"><A href="{% if post.is_self %}{{ to_root }}/r/{{ post.subreddit.name }}/{{ post.id }}/{% else %}{{ post.url }}{% endif %}">{{ post.title|escape }}</A></H1>
+            <H1 class="posttitle"><A href="{% if post.is_self %}{{ to_root }}/r/{{ post.subreddit.name }}/{{ post.id }}/{% else %}{{ post.url|rewrite_url(to_root) }}{% endif %}">{{ post.title|escape }}</A></H1>
         {% endblock %}
         {% block postflair %}
             {% if post.link_flair_text %}

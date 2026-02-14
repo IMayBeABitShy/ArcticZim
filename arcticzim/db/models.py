@@ -328,3 +328,34 @@ class Comment(Base):
             return "submmitter"
         else:
             return None
+
+
+class MediaFile(Base):
+    """
+    This object tracks the status of media files.
+
+    This class keeps track of both URLs and checksums. The first mediafile
+    that downloads a file is considered the primary one.
+    """
+    __tablename__ = "mediafile"
+    __table_args__ = (
+        UniqueConstraint("url"),
+    )
+    uid: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    url: Mapped[str] = mapped_column(String(20248), unique=True, index=True)
+    md5: Mapped[str] = mapped_column(String(32), index=True, nullable=True)
+    mimetype: Mapped[str] = mapped_column(String(256), index=True, nullable=True)
+    # extension: Mapped[str] = mapped_column(String(64))
+    downloaded: Mapped[bool]
+    size: Mapped[Optional[int]]
+    primary_uid: Mapped[int] = mapped_column(ForeignKey("mediafile.uid"), nullable=True)
+
+    primary: Mapped["MediaFile"] = relationship(
+        back_populates="duplicates",
+        cascade="all",
+        remote_side=[uid],
+    )
+    duplicates: Mapped[List["MediaFile"]] = relationship(
+        back_populates="primary",
+        cascade="all,delete-orphan",
+    )

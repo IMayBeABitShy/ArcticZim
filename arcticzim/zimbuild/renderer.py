@@ -26,6 +26,7 @@ except ImportError:
     minify_html = None
 
 from ..util import format_size, format_number, get_resource_file_path
+from ..downloader import MediaFileManager
 from .buckets import BucketMaker
 
 
@@ -230,6 +231,23 @@ class RenderResult(object):
             yield obj
 
 
+class FileReferences(RenderedObject):
+    """
+    A list of MediaFile uids that were referenced in the post.
+
+    @ivar uids: list of referenced uids
+    @type uids: L{list} of L{int}
+    """
+    def __init__(self, uids):
+        """
+        The default constructor.
+
+        @param uids: list of referenced uids
+        @type uids: L{list} of L{int}
+        """
+        self.uids = uids
+
+
 class SubredditInfo(object):
     """
     A helper class that holds details about a subreddit.
@@ -284,16 +302,22 @@ class HtmlRenderer(object):
     @type environment: L{jinja2.Environment}
     @ivar options: render options
     @type options: L{RenderOptions}
+    @ivar filemanager: the media file manager
+    @type filemanager: L{arcticzim.downloader.MediaFileManager}
     """
-    def __init__(self, options):
+    def __init__(self, options, filemanager):
         """
         The default constructor.
 
         @param options: render options
         @type options: L{RenderOptions}
+        @param filemanager: the media file manager
+        @type filemanager: L{arcticzim.downloader.MediaFileManager}
         """
         assert isinstance(options, RenderOptions)
+        assert isinstance(filemanager, MediaFileManager)
         self.options = options
+        self.filemanager = filemanager
 
         # setup jinja environment
         self.environment = Environment(
@@ -308,13 +332,14 @@ class HtmlRenderer(object):
         # configure filters
         self.environment.filters["render_comment_text"] = self._render_comment_text_filter
         self.environment.filters["render_post_text"] = self._render_comment_text_filter
-        self.environment.filters["render_license"] = self._render_comment_text_filter
+        self.environment.filters["render_license"] = self._render_license_text_filter
         self.environment.filters["format_number"] = format_number
         self.environment.filters["format_size"] = format_size
         self.environment.filters["format_date"] = self._format_date
         self.environment.filters["format_timestamp"] = self._format_timestamp
         self.environment.filters["first_elements"] = self._first_elements
         self.environment.filters["default_index"] = self._default_index
+        self.environment.filters["rewrite_url"] = self.filemanager.rewrite_url
         self.environment.filters["debug"] = print
 
         # configure tests
@@ -345,6 +370,16 @@ class HtmlRenderer(object):
                 s,
             )
 
+    def _add_file_references(self, result):
+        """
+        Add file references for the observed files into the render results.
+
+        @param result: result to add file references to
+        @type result: L{RenderResult}
+        """
+        fro = FileReferences(list(set(self.filemanager.referenced_files)))
+        result.add(fro)
+
     def render_post(self, post):
         """
         Render a post.
@@ -354,6 +389,7 @@ class HtmlRenderer(object):
         @return: the rendered pages and redirects
         @rtype: L{RenderResult}
         """
+        self.filemanager.reset()
         result = RenderResult()
         post_template = self.environment.get_template("postpage.html.jinja")
         post_page = post_template.render(
@@ -386,6 +422,8 @@ class HtmlRenderer(object):
                     content=post.poll_data,
                 )
             )
+        # add referenced files
+        self._add_file_references(result)
         return result
 
     def render_subreddit(self, subreddit, sort="top", posts=None, num_posts=None):
@@ -407,7 +445,6 @@ class HtmlRenderer(object):
         @return: the rendered pages and redirects
         @rtype: L{RenderResult}
         """
-
         # general preparations
         if posts is None:
             num_posts = len(subreddit.posts)
@@ -1094,16 +1131,36 @@ class HtmlRenderer(object):
 
     # =========== filters ===============
 
-    def _render_comment_text_filter(self, value):
+    def _render_comment_text_filter(self, value, to_root):
         """
         Render a comment body, returning the rendered html.
 
         @param value: comment text to render
         @type value: L{str}
+        @param to_root: same as in the templates
+        @type to_root: L{str}
         @return: the rendered HTML of the comment text
         @rtype: L{str}
         """
-        return mistune.html(value)
+        rendered = mistune.html(
+            self.filemanager.rewrite_urls_in_text(
+                value,
+                to_root=to_root,
+            )
+        )
+        return rendered
+
+    def _render_license_text_filter(self, value):
+        """
+        Render a license text, returning the rendered html.
+
+        @param value: license text to render
+        @type value: L{str}
+        @return: the rendered HTML of the license text
+        @rtype: L{str}
+        """
+        rendered = mistune.html(value)
+        return rendered
 
     def _format_date(self, value):
         """

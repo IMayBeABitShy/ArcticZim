@@ -3,6 +3,7 @@ This module contains the command line interface.
 """
 import argparse
 import time
+import os
 
 
 try:
@@ -19,6 +20,7 @@ from .db.models import Base
 from .db.connection import ConnectionConfig
 from .importer import import_posts_from_file, import_comments_from_file, prepare_db
 from .zimbuild.builder import ZimBuilder, BuildOptions
+from .downloader import download_all as download_all_media
 from .util import format_timedelta
 
 
@@ -69,9 +71,28 @@ def run_build(ns):
     @type ns: L{argparse.Namespace}
     """
     connection_config = _connection_config_from_ns(ns)
-    builder = ZimBuilder(connection_config)
+    builder = ZimBuilder(connection_config, mediadir=ns.mediadir)
     build_options = BuildOptions.from_ns(ns)
     builder.build(ns.outpath, options=build_options)
+
+
+def run_media_download(ns):
+    """
+    Run the download-media command.
+
+    @param ns: namespace containing arguments
+    @type ns: L{argparse.Namespace}
+    """
+    print("Creating media directory if neccessary...")
+    if not os.path.exists(ns.mediadir):
+        os.mkdir(ns.mediadir)
+    connection_config = _connection_config_from_ns(ns)
+    print("Done. Connecting to database...")
+    engine = connection_config.connect()
+    print("Done. Creating database session...")
+    with Session(engine) as session:
+        print("Done. Starting download.")
+        download_all_media(session=session, mediadir=ns.mediadir)
 
 
 def main():
@@ -100,7 +121,7 @@ def main():
     import_parser.add_argument(
         "database",
         action="store",
-        help="Database to store stories in, as sqlalchemy connection URL",
+        help="Database to store objects in, as sqlalchemy connection URL",
     )
     import_parser.add_argument(
         "--posts-file",
@@ -120,7 +141,24 @@ def main():
         type=int,
         dest="batch_size",
         default=1000,
-        help="How many posts and comments to import at once",
+        help="how many posts and comments to import at once",
+    )
+
+    mediadownload_parser = subparsers.add_parser(
+        "download-media",
+        help="download media files of posts",
+    )
+    mediadownload_parser.add_argument(
+        "database",
+        action="store",
+        help="database to load objects from, as sqlalchemy connection URL",
+    )
+    mediadownload_parser.add_argument(
+        "--media-dir",
+        action="store",
+        dest="mediadir",
+        default="arcticzim_media/",
+        help="directory to store media in",
     )
 
     # parser for the ZIM build
@@ -131,7 +169,14 @@ def main():
     build_parser.add_argument(
         "database",
         action="store",
-        help="database to load stories from, as sqlalchemy connection URL",
+        help="database to load objects from, as sqlalchemy connection URL",
+    )
+    build_parser.add_argument(
+        "--media-dir",
+        action="store",
+        dest="mediadir",
+        default="arcticzim_media/",
+        help="directory to store media in",
     )
     build_parser.add_argument(
         "outpath",
@@ -144,6 +189,8 @@ def main():
 
     if ns.command == "import":
         run_import(ns)
+    elif ns.command == "download-media":
+        run_media_download(ns)
     elif ns.command == "build":
         run_build(ns)
     else:

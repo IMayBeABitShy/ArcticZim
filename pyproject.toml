@@ -33,6 +33,7 @@ dependencies = [
     "jinja2",
     "mistune",
     "pyScss",
+    "requests",
 ]
 
 # optional dependencies

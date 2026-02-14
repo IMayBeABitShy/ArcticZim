@@ -42,8 +42,9 @@ except ImportError:
 
 from ..util import get_package_dir, get_resource_file_path, set_or_increment
 from ..util import format_timedelta, format_size, format_number
-from ..db.models import Post, Subreddit, User, ARCTICZIM_USERNAME
-from .renderer import HtmlPage, Redirect, JsonObject, Script, RenderOptions
+from ..downloader import hash_url
+from ..db.models import Post, Subreddit, User, MediaFile, ARCTICZIM_USERNAME
+from .renderer import HtmlPage, Redirect, JsonObject, Script, FileReferences, RenderOptions
 from .worker import Worker, WorkerOptions
 from .worker import StopTask, PostRenderTask, EtcRenderTask, SubredditRenderTask, UserRenderTask
 from .worker import MARKER_TASK_COMPLETED, MARKER_WORKER_STOPPED
@@ -344,6 +345,9 @@ class IconItem(Item):
     def __init__(self, icon_name):
         """
         The default constructor.
+
+        @param icon_name: name of the icon to include
+        @type icon_name: L{str}
         """
         super().__init__()
         self.icon_name = icon_name
@@ -359,6 +363,43 @@ class IconItem(Item):
 
     def get_contentprovider(self):
         return FileProvider(get_resource_file_path("icons", "icon_{}.png".format(self.icon_name)))
+
+    def get_hints(self):
+        return {
+            Hint.FRONT_ARTICLE: False,
+            Hint.COMPRESS: True,
+        }
+
+
+class MediaItem(Item):
+    """
+    A L{libzim.writer.Item} for media files.
+    """
+    def __init__(self, mediadir, mediafile):
+        """
+        The default constructor.
+
+        @param mediadir: path to the media directory
+        @type mediadir: L{str}
+        @param mediafile: the media file this is for
+        @type mediafile: L{arcticzim.db.models.MediaFile}
+        """
+        self._mediadir = mediadir
+        self._uid = mediafile.uid
+        self._mimetype = mediafile.mimetype
+        self._url = mediafile.url
+
+    def get_path(self):
+        return "media/{}".format(self._uid)
+
+    def get_title(self):
+        return self._url
+
+    def get_mimetype(self):
+        return self._mimetype
+
+    def get_contentprovider(self):
+        return FileProvider(os.path.join(self._mediadir, hash_url(self._url)))
 
     def get_hints(self):
         return {
@@ -393,6 +434,8 @@ class BuildOptions(object):
     @type with_stats: L{bool}
     @ivar with_users: if nonzero, include user pages
     @type with_users: L{bool}
+    @ivar with_media: if nonzero, include media files
+    @type with_media: L{str}
 
     @ivar use_threads: if nonzero, use threads instead of processes
     @type use_threads: L{bool}
@@ -424,6 +467,7 @@ class BuildOptions(object):
         # content options
         with_stats=True,
         with_users=True,
+        with_media=True,
 
         # genral build_options
         log_directory=None,
@@ -476,6 +520,8 @@ class BuildOptions(object):
         @type with_stats: L{bool}
         @param with_users: if nonzero, include user pages
         @type with_users: L{bool}
+        @param with_media: if nonzero, include media files
+        @type with_media: L{str}
         """
         self.name = name
         self.title = title
@@ -487,6 +533,7 @@ class BuildOptions(object):
 
         self.with_stats = with_stats
         self.with_users = with_users
+        self.with_media = with_media
 
         self.use_threads = bool(use_threads)
         if num_workers is None:
@@ -583,6 +630,12 @@ class BuildOptions(object):
             help="do not include statistics.",
         )
         parser.add_argument(
+            "--no-media",
+            action="store_false",
+            dest="with_media",
+            help="do not include media.",
+        )
+        parser.add_argument(
             "--no-users",
             action="store_false",
             dest="with_users",
@@ -633,6 +686,7 @@ class BuildOptions(object):
 
             with_stats=ns.with_stats,
             with_users=ns.with_users,
+            with_media=ns.with_media,
             skip_posts=ns.skip_posts,
         )
         return bo
@@ -649,8 +703,8 @@ class BuildOptions(object):
         tags = [
             "_sw:no",
             "_ftindex:" + ("yes" if self.indexing else "no"),
-            "_pictures:no",  # may change in the future
-            "_videos:no",  # unlikely to change
+            "_pictures:" + ("yes" if self.with_media else "no"),
+            "_videos:" + ("yes" if self.with_media else "no"),
             "_category:reddit",
         ]
         metadata = {
@@ -678,6 +732,7 @@ class BuildOptions(object):
             memprofile_directory=self.memprofile_directory,
             log_directory=self.log_directory,
             with_stats=self.with_stats,
+            with_media=self.with_media,
         )
         return options
 
@@ -709,20 +764,26 @@ class ZimBuilder(object):
     @type num_files_added: L{dict} of L{str} -> L{int}
     @ivar next_worker_id: ID to give next worker
     @type next_worker_id: L{int}
+    @ivar mediadir: location where media files are stored
+    @type mediadir: L{str}
     """
-    def __init__(self, connection_config):
+    def __init__(self, connection_config, mediadir):
         """
         The default constructor.
 
         @param connection_config: configuration for database connection
         @type connection_config: L{arcticzim.db.connection.ConnectionConfig}
+        @param mediadir: location where media files are stored
+        @type mediadir: L{str}
         """
         self.connection_config = connection_config
 
         self.inqueue = None
         self.outqueue = None
         self.num_files_added = {}
+        self.media_file_references = set()
         self.next_worker_id = 0
+        self.mediadir = mediadir
 
     def _init_queues(self, options):
         """
@@ -964,6 +1025,21 @@ class ZimBuilder(object):
                 self._send_post_tasks(session)
         else:
             self.log(" -> Skipping posts!")
+        # --- media ---
+        if options.with_media:
+            self.log(" -> Adding media...")
+            n = len(self.media_file_references)
+            with tqdm.tqdm(desc="Adding files", total=n, unit="files") as bar:
+                while self.media_file_references:
+                    uid = self.media_file_references.pop()
+                    stmt = select(MediaFile).where(MediaFile.uid == uid)
+                    mf = session.execute(stmt).one()[0]
+                    item = MediaItem(self.mediadir, mf)
+                    creator.add_item(item)
+                    set_or_increment(self.num_files_added, "image", 1)
+                    bar.update(1)
+        else:
+            self.log(" -> Skipping media!")
 
     @contextlib.contextmanager
     def _run_stage(self, options, **kwargs):
@@ -1137,6 +1213,10 @@ class ZimBuilder(object):
                             )
                             creator.add_item(item)
                             set_or_increment(self.num_files_added, "js")
+                        elif isinstance(rendered_object, FileReferences):
+                            # register the file references
+                            if options.with_media:
+                                self.media_file_references.update(rendered_object.uids)
                         else:
                             # unknown result object
                             raise RuntimeError("Unknown render result: {}".format(type(rendered_object)))

@@ -32,6 +32,7 @@ except ImportError:
 from .renderer import HtmlRenderer, RenderResult, SubredditInfo, SUBREDDITS_ON_INDEX_PAGE
 from .statistics import query_post_stats
 from ..util import ensure_iterable
+from ..downloader import MediaFileManager
 from ..db.models import Post, User, Comment, Subreddit
 
 
@@ -214,8 +215,10 @@ class WorkerOptions(object):
     @type memprofile_directory: L{str} or L{None}
     @ivar with_stats: if nonzero, include statistics
     @type with_stats: L{bool}
+    @ivar with_media: if nonzero, include media
+    @type with_media: L{bool}
     """
-    def __init__(self, eager=True, log_directory=None, memprofile_directory=None, with_stats=True):
+    def __init__(self, eager=True, log_directory=None, memprofile_directory=None, with_stats=True, with_media=True):
         """
         The default constructor.
 
@@ -227,6 +230,8 @@ class WorkerOptions(object):
         @type memprofile_directory: L{str} or L{None}
         @param with_stats: if nonzero, include statistics
         @type with_stats: L{bool}
+        @param with_media: if nonzero, include media
+        @type with_media: L{bool}
         """
         assert isinstance(log_directory, str) or (log_directory is None)
         assert isinstance(memprofile_directory, str) or (memprofile_directory is None)
@@ -234,6 +239,7 @@ class WorkerOptions(object):
         self.log_directory = log_directory
         self.memprofile_directory = memprofile_directory
         self.with_stats = with_stats
+        self.with_media = with_media
 
 
 class Worker(object):
@@ -286,7 +292,13 @@ class Worker(object):
 
         self.session = Session(engine)
         self.options = options
-        self.renderer = HtmlRenderer(options=render_options)
+        self.renderer = HtmlRenderer(
+            options=render_options,
+            filemanager=MediaFileManager(
+                session=self.session,
+                enabled=self.options.with_media,
+            ),
+        )
 
         self.setup_logging()
 
