@@ -92,7 +92,11 @@ def run_media_download(ns):
     print("Done. Creating database session...")
     with Session(engine) as session:
         print("Done. Starting download.")
-        download_all_media(session=session, mediadir=ns.mediadir)
+        download_all_media(
+            session=session,
+            mediadir=ns.mediadir,
+            enable_post_processing=ns.post_processing,
+        )
 
 
 def main():
@@ -159,6 +163,12 @@ def main():
         dest="mediadir",
         default="arcticzim_media/",
         help="directory to store media in",
+    )
+    mediadownload_parser.add_argument(
+        "--no-post-processing",
+        action="store_false",
+        dest="post_processing",
+        help="disable post-processing, keeping media files unaltered.",
     )
 
     # parser for the ZIM build

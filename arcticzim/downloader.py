@@ -13,6 +13,7 @@ import requests
 import tqdm
 
 from .db.models import MediaFile, Post
+from .imgutils import minimize_image, mimetype_is_image
 
 
 class DownloadFailed(Exception):
@@ -87,7 +88,7 @@ def has_downloaded(session, url, any_status=True):
     return (mf is not None)
 
 
-def download(session, url, mediadir):
+def download(session, url, mediadir, enable_post_processing=True):
     """
     Check if the URL has already been downloaded.
 
@@ -97,6 +98,8 @@ def download(session, url, mediadir):
     @type url: L{str}
     @param mediadir: directory where files should be downloaded too
     @type mediadir: L{str}
+    @param enable_post_processing: whether post-processing should be applied
+    @type enable_post_processing: L{bool}
     """
     url_hash = hash_url(url)
     outpath = os.path.join(mediadir, url_hash)
@@ -153,9 +156,10 @@ def download(session, url, mediadir):
                     mimetype=mimetype,
                     size=size,
                 )
+                if enable_post_processing:
+                    post_process(mediadir, mf)
                 session.add(mf)
                 session.commit()
-                post_process(mediadir, mf)
 
     except DownloadFailed:
         mo = MediaFile(
@@ -194,13 +198,19 @@ def post_process(mediadir, mediafile):
     """
     Post process an image file.
 
+    Don't forget to add and commit the mediafile afterwards!
+
     @param mediadir: directory containing the files
     @type mediadir: L{str}
     @param mediafile: the mediafile object
     @type mediafile: L{arcticzim.db.models.MediaFile}
     """
     path = os.path.join(mediadir, hash_url(mediafile.url))
-    pass  # not implemented
+    if mimetype_is_image(mediafile.mimetype):
+        mimetype, size = minimize_image(path)
+        mediafile.size = size
+        mediafile.mimetype = mimetype
+
 
 
 def get_urls_from_post(post):
@@ -233,7 +243,7 @@ def get_urls_in_string(s):
     return []  # not implemented
 
 
-def download_all(session, mediadir, sleep=0.5):
+def download_all(session, mediadir, sleep=0.5, enable_post_processing=True):
     """
     Download all files of posts.
 
@@ -243,6 +253,8 @@ def download_all(session, mediadir, sleep=0.5):
     @type mediadir: L{str}
     @param sleep: sleep time between downloads in seconds
     @type sleep: L{int} or L{float}
+    @param enable_post_processing: whether post-processing should be applied
+    @type enable_post_processing: L{bool}
     """
     n = session.execute(select(func.count(Post.uid))).one()[0]
     stmt = select(Post).options(
@@ -257,7 +269,12 @@ def download_all(session, mediadir, sleep=0.5):
         if not urls:
             continue
         for url in tqdm.tqdm(urls, desc="downloading files for {}".format(post.id), total=len(urls), unit="files"):
-            download(session=session, url=url, mediadir=mediadir)
+            download(
+                session=session,
+                url=url,
+                mediadir=mediadir,
+                enable_post_processing=enable_post_processing,
+            )
             time.sleep(sleep)
 
 
