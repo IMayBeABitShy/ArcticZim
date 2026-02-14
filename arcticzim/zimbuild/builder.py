@@ -43,6 +43,7 @@ except ImportError:
 from ..util import get_package_dir, get_resource_file_path, set_or_increment
 from ..util import format_timedelta, format_size, format_number
 from ..downloader import hash_url
+from ..imgutils import mimetype_is_image
 from ..db.models import Post, Subreddit, User, MediaFile, ARCTICZIM_USERNAME
 from .renderer import HtmlPage, Redirect, JsonObject, Script, FileReferences, RenderOptions
 from .worker import Worker, WorkerOptions
@@ -1036,7 +1037,10 @@ class ZimBuilder(object):
                     mf = session.execute(stmt).one()[0]
                     item = MediaItem(self.mediadir, mf)
                     creator.add_item(item)
-                    set_or_increment(self.num_files_added, "image", 1)
+                    if mimetype_is_image(mf.mimetype):
+                        set_or_increment(self.num_files_added, "image", 1)
+                    else:
+                        set_or_increment(self.num_files_added, "other media", 1)
                     bar.update(1)
         else:
             self.log(" -> Skipping media!")
