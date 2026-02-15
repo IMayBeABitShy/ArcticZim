@@ -9,7 +9,7 @@ This project is still a work-in-progress.
 **Supported features:**
 
  - text-posts are implemented
- - partial media support has been implemented
+ - media posts (both images and videos) are implemented and optional
  - comment trees rendered
    - can be collapsed
  - subreddit pages are implemented
@@ -70,7 +70,9 @@ Simply run `arcticzim import --posts-file <path/to/posts/file> --comments-file <
 
 Now, let's download images, videos and so on. This step is optional, you can choose not to download any media.
 
-Simply run `arcticzim download-media --media-dir <path/to/store/media/in> <database-url>` and wait.
+Simply run `arcticzim download-media --download-reddit-videos --download-external-videos --media-dir <path/to/store/media/in> <database-url>` and wait.
+
+Note that `ffmpeg` may be required to download videos. If you don't want to download videos, you can simply skip those options.
 
 ### Step 6: Build the ZIM file.
 

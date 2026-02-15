@@ -43,7 +43,7 @@ except ImportError:
 from ..util import get_package_dir, get_resource_file_path, set_or_increment
 from ..util import format_timedelta, format_size, format_number
 from ..downloader import hash_url
-from ..imgutils import mimetype_is_image
+from ..imgutils import mimetype_is_image, mimetype_is_video
 from ..db.models import Post, Subreddit, User, MediaFile, ARCTICZIM_USERNAME
 from .renderer import HtmlPage, Redirect, JsonObject, Script, FileReferences, RenderOptions
 from .worker import Worker, WorkerOptions
@@ -437,6 +437,8 @@ class BuildOptions(object):
     @type with_users: L{bool}
     @ivar with_media: if nonzero, include media files
     @type with_media: L{str}
+    @ivar with_videos: if nonzero, include video files
+    @type with_videos: L{str}
 
     @ivar use_threads: if nonzero, use threads instead of processes
     @type use_threads: L{bool}
@@ -469,6 +471,7 @@ class BuildOptions(object):
         with_stats=True,
         with_users=True,
         with_media=True,
+        with_videos=False,
 
         # genral build_options
         log_directory=None,
@@ -523,6 +526,8 @@ class BuildOptions(object):
         @type with_users: L{bool}
         @param with_media: if nonzero, include media files
         @type with_media: L{str}
+        @params with_videos: if nonzero, include video files
+        @type with_videos: L{str}
         """
         self.name = name
         self.title = title
@@ -535,6 +540,7 @@ class BuildOptions(object):
         self.with_stats = with_stats
         self.with_users = with_users
         self.with_media = with_media
+        self.with_videos = with_videos
 
         self.use_threads = bool(use_threads)
         if num_workers is None:
@@ -628,19 +634,25 @@ class BuildOptions(object):
             "--no-stats",
             action="store_false",
             dest="with_stats",
-            help="do not include statistics.",
+            help="do not include statistics",
         )
         parser.add_argument(
             "--no-media",
             action="store_false",
             dest="with_media",
-            help="do not include media.",
+            help="do not include media",
+        )
+        parser.add_argument(
+            "--with-videos",
+            action="store_true",
+            dest="with_videos",
+            help="include videos",
         )
         parser.add_argument(
             "--no-users",
             action="store_false",
             dest="with_users",
-            help="do not include user pages.",
+            help="do not include user pages",
         )
         parser.add_argument(
             "--lazy",
@@ -688,6 +700,7 @@ class BuildOptions(object):
             with_stats=ns.with_stats,
             with_users=ns.with_users,
             with_media=ns.with_media,
+            with_videos=ns.with_videos,
             skip_posts=ns.skip_posts,
         )
         return bo
@@ -705,7 +718,7 @@ class BuildOptions(object):
             "_sw:no",
             "_ftindex:" + ("yes" if self.indexing else "no"),
             "_pictures:" + ("yes" if self.with_media else "no"),
-            "_videos:" + ("yes" if self.with_media else "no"),
+            "_videos:" + ("yes" if self.with_videos else "no"),
             "_category:reddit",
         ]
         metadata = {
@@ -734,6 +747,7 @@ class BuildOptions(object):
             log_directory=self.log_directory,
             with_stats=self.with_stats,
             with_media=self.with_media,
+            with_videos=self.with_videos,
         )
         return options
 
@@ -747,6 +761,7 @@ class BuildOptions(object):
         options = RenderOptions(
             with_stats=self.with_stats,
             with_users=self.with_users,
+            with_videos=self.with_videos,
         )
         return options
 
@@ -1039,6 +1054,8 @@ class ZimBuilder(object):
                     creator.add_item(item)
                     if mimetype_is_image(mf.mimetype):
                         set_or_increment(self.num_files_added, "image", 1)
+                    elif mimetype_is_video(mf.mimetype):
+                        set_or_increment(self.num_files_added, "video", 1)
                     else:
                         set_or_increment(self.num_files_added, "other media", 1)
                     bar.update(1)

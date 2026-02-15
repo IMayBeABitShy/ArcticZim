@@ -4,6 +4,12 @@
     {% block postbody %}
         {% if post.post_hint == "image" %}
             <img class="postimage" src="{{ post.url|rewrite_url(to_root) }}"></image>
+        {% elif (post.post_hint in ("rich:video", "hosted:video")) %}
+            {% if options.with_videos %}
+                <video autoplay=1 controls=1 loop=1 src="{{ post.url|rewrite_url(to_root) }}">Video</video>
+            {% else %}
+                <P class="arcticzim-message">[Video not included]</P>
+            {% endif %}
         {% endif %}
         <DIV class="postbodytext mdbody"> {{ post.selftext|render_post_text(to_root=to_root) }}</DIV>
     {% endblock %}

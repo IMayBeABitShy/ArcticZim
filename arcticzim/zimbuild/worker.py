@@ -217,8 +217,19 @@ class WorkerOptions(object):
     @type with_stats: L{bool}
     @ivar with_media: if nonzero, include media
     @type with_media: L{bool}
+    @ivar with_videos: if nonzero, include videos
+    @type with_videos: L{bool}
     """
-    def __init__(self, eager=True, log_directory=None, memprofile_directory=None, with_stats=True, with_media=True):
+    def __init__(
+        self,
+        eager=True,
+        log_directory=None,
+        memprofile_directory=None,
+
+        with_stats=True,
+        with_media=True,
+        with_videos=True,
+    ):
         """
         The default constructor.
 
@@ -232,6 +243,8 @@ class WorkerOptions(object):
         @type with_stats: L{bool}
         @param with_media: if nonzero, include media
         @type with_media: L{bool}
+        @param with_videos: if nonzero, include videos
+        @type with_videos: L{bool}
         """
         assert isinstance(log_directory, str) or (log_directory is None)
         assert isinstance(memprofile_directory, str) or (memprofile_directory is None)
@@ -240,6 +253,7 @@ class WorkerOptions(object):
         self.memprofile_directory = memprofile_directory
         self.with_stats = with_stats
         self.with_media = with_media
+        self.with_videos = with_videos
 
 
 class Worker(object):
@@ -297,6 +311,8 @@ class Worker(object):
             filemanager=MediaFileManager(
                 session=self.session,
                 enabled=self.options.with_media,
+                images_enabled=self.options.with_media,
+                videos_enabled=self.options.with_videos,
             ),
         )
 

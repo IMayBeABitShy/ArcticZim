@@ -23,6 +23,21 @@ def mimetype_is_image(mimetype):
     return mimetype.startswith("image/")
 
 
+def mimetype_is_video(mimetype):
+    """
+    Check if a mimetype refers to a video mimetype.
+
+    @param mimetype: mimetype to check
+    @type mimetype: L{bool}
+    @return: whether the mimetype is a video mimetype
+    @rtype: L{bool}
+    """
+    if ";" in mimetype:
+        mimetype = mimetype[:mimetype.find(";")]
+    mimetype = mimetype.strip().lower()
+    return mimetype.startswith("video/")
+
+
 def minimize_image(path, max_w=512, max_h=512):
     """
     Minimize the image at the target path.

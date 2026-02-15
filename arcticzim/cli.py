@@ -96,6 +96,8 @@ def run_media_download(ns):
             session=session,
             mediadir=ns.mediadir,
             enable_post_processing=ns.post_processing,
+            download_reddit_videos=ns.download_reddit_videos,
+            download_external_videos=ns.download_external_videos,
         )
 
 
@@ -169,6 +171,18 @@ def main():
         action="store_false",
         dest="post_processing",
         help="disable post-processing, keeping media files unaltered.",
+    )
+    mediadownload_parser.add_argument(
+        "--download-reddit-videos",
+        action="store_true",
+        dest="download_reddit_videos",
+        help="download videos hosted on reddit",
+    )
+    mediadownload_parser.add_argument(
+        "--download-external-videos",
+        action="store_true",
+        dest="download_external_videos",
+        help="download videos NOT hosted on reddit",
     )
 
     # parser for the ZIM build

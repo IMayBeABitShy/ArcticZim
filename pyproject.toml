@@ -35,6 +35,8 @@ dependencies = [
     "pyScss",
     "requests",
     "Pillow",
+    "yt-dlp",
+    "redvid",
 ]
 
 # optional dependencies

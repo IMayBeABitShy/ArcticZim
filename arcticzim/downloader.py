@@ -11,9 +11,12 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import undefer
 import requests
 import tqdm
+from yt_dlp import YoutubeDL
+from redvid import Downloader as RedvidDL
 
 from .db.models import MediaFile, Post
-from .imgutils import minimize_image, mimetype_is_image
+from .imgutils import minimize_image, mimetype_is_image, mimetype_is_video
+
 
 
 class DownloadFailed(Exception):
@@ -88,7 +91,7 @@ def has_downloaded(session, url, any_status=True):
     return (mf is not None)
 
 
-def download(session, url, mediadir, enable_post_processing=True):
+def download(session, url, mediadir, enable_post_processing=True, download_videos=True):
     """
     Check if the URL has already been downloaded.
 
@@ -100,12 +103,28 @@ def download(session, url, mediadir, enable_post_processing=True):
     @type mediadir: L{str}
     @param enable_post_processing: whether post-processing should be applied
     @type enable_post_processing: L{bool}
+    @param download_videos: whether videos should be downloaded
+    @type download_videos: L{bool}
     """
     url_hash = hash_url(url)
     outpath = os.path.join(mediadir, url_hash)
     try:
-        if is_ytdlp(url):
-            do_ytldp_download(url=url, mediadir=mediadir)
+        if is_ytdlp(url) or is_redvid(url):
+            if not download_videos:
+                return
+            if is_redvid(url):
+                mimetype = do_redvid_download(url=url, mediadir=mediadir, outpath=outpath)
+            else:
+                mimetype = do_ytldp_download(url=url, mediadir=mediadir, outpath=outpath)
+            hasher = hashlib.md5()
+            size = 0
+            with open(outpath, "rb") as fin:
+                chunk = True
+                while chunk:
+                    chunk = fin.read(4096)
+                    size += len(chunk)
+                    hasher.update(chunk)
+            md5 = hasher.hexdigest()
         else:
             headers = {
                 "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0",
@@ -128,45 +147,46 @@ def download(session, url, mediadir, enable_post_processing=True):
                     hasher.update(chunk)
                     size += len(chunk)
             md5 = hasher.hexdigest()
-            existing_mf = session.execute(
-                select(MediaFile).where(
-                    MediaFile.md5 == md5,
-                    MediaFile.downloaded == True,
-                    MediaFile.primary_uid is None,
-                )
-            ).one_or_none()
-            if existing_mf is not None:
-                # file already downloaded
-                os.remove(os.path.join(mediadir, url_hash))
-                mf = MediaFile(
-                    url=unify_url(url),
-                    downloaded=True,
-                    md5=md5,
-                    mimetype=mimetype,
-                    primary_uid=existing_mf[0].uid,
-                )
-                session.add(mf)
-                session.commit()
-                return
-            else:
-                mf = MediaFile(
-                    url=unify_url(url),
-                    downloaded=True,
-                    md5=md5,
-                    mimetype=mimetype,
-                    size=size,
-                )
-                if enable_post_processing:
-                    post_process(mediadir, mf)
-                session.add(mf)
-                session.commit()
-
     except DownloadFailed:
         mo = MediaFile(
             url=unify_url(url),
             downloaded=False,
         )
         session.add(mo)
+        session.commit()
+        return
+
+    existing_mf = session.execute(
+        select(MediaFile).where(
+            MediaFile.md5 == md5,
+            MediaFile.downloaded == True,
+            MediaFile.primary_uid is None,
+        )
+    ).one_or_none()
+    if existing_mf is not None:
+        # file already downloaded
+        os.remove(os.path.join(mediadir, url_hash))
+        mf = MediaFile(
+            url=unify_url(url),
+            downloaded=True,
+            md5=md5,
+            mimetype=mimetype,
+            primary_uid=existing_mf[0].uid,
+        )
+        session.add(mf)
+        session.commit()
+        return
+    else:
+        mf = MediaFile(
+            url=unify_url(url),
+            downloaded=True,
+            md5=md5,
+            mimetype=mimetype,
+            size=size,
+        )
+        if enable_post_processing:
+            post_process(mediadir, mf)
+        session.add(mf)
         session.commit()
 
 
@@ -179,10 +199,14 @@ def is_ytdlp(url):
     @return: whether yt-dlp should be used to download target url
     @rtype: L{bool}
     """
-    return False  # not implemented
+    with YoutubeDL(params={"allowed_extractors": ["default", "-generic"]}) as yt:
+        for ie in yt._ies.values():  # TODO: private attribute access is probably a bad idea
+            if ie.suitable(url) and ie.working():
+                return True
+    return False
 
 
-def do_ytldp_download(url, mediadir):
+def do_ytldp_download(url, mediadir, outpath):
     """
     Download a URL with yt-dlp.
 
@@ -190,8 +214,65 @@ def do_ytldp_download(url, mediadir):
     @type url: L{str}
     @param mediadir: directory where files should be downloaded too
     @type mediadir: L{str}
+    @param outpath: path the file should be written to
+    @type outpath: L{str}
+    @return: the mimetype of the downloaded video
+    @rtype: L{str}
     """
-    raise NotImplementedError("yt-dlp support is not implemented!")
+    hashed_url = hash_url(url)
+    params = {
+        # TODO: change "worst" to smallest filesize
+        "format": "worst/worstvideo+worstaudio",
+        "outtmpl": "{}.%(ext)s".format(outpath),
+    }
+    with YoutubeDL(params=params) as yt:
+        try:
+            yt.download(url)
+        except Exception as e:
+            raise DownloadFailed("yt-dlp raised an exception when attempting to download video") from e
+    # todo: the following is probably inefficient for large file collections
+    for fname in os.listdir(mediadir):
+        if fname.startswith(hashed_url):
+            break
+    mimetype = guess_type(fname)[0] or "video/mp4"
+    os.rename(os.path.join(mediadir, fname), outpath)
+    return mimetype
+
+
+def is_redvid(url):
+    """
+    Check if the target url should be downloaded via redvid.
+
+    @param url: url to check
+    @type url: L{bool}
+    @return: whether redvid should be used to download target url
+    @rtype: L{bool}
+    """
+    return ("://v.redd.it" in url)
+
+
+def do_redvid_download(url, mediadir, outpath):
+    """
+    Download a URL with redvid.
+
+    @param url: url to download
+    @type url: L{str}
+    @param mediadir: directory where files should be downloaded too
+    @type mediadir: L{str}
+    @param outpath: path the file should be written to
+    @type outpath: L{str}
+    @return: the mimetype of the downloaded video
+    @rtype: L{str}
+    """
+    hashed_url = hash_url(url)
+    downloader = RedvidDL(url=url, path=mediadir, min_q=True)
+    try:
+        path = downloader.download()
+    except Exception as e:
+        raise DownloadFailed("redvid raised an exception when attempting to download video") from e
+    mimetype = guess_type(path)[0] or "video/mp4"
+    os.rename(path, outpath)
+    return mimetype
 
 
 def post_process(mediadir, mediafile):
@@ -212,38 +293,60 @@ def post_process(mediadir, mediafile):
         mediafile.mimetype = mimetype
 
 
-
-def get_urls_from_post(post):
+def get_urls_from_post(post, include_reddit_videos=True, include_external_videos=False):
     """
     Return all URLs used in a post
 
     @param post: post to get URLs from
     @type post: L{arcticzim.db.models.Post}
+    @param include_reddit_videos: whether reddit videos should be included
+    @type include_reddit_videos: L{bool}
+    @param include_external_videos: whether non-reddit videos should be included
+    @type include_external_videos: L{bool}
     @return: a list of posts
     @rtype: L{list} of L{str}
     """
     urls = []
-    if post.post_hint in ("rich:video", "hosted:video", "image"):
+    if post.post_hint in ("rich:video", ) and include_external_videos:
+        urls.append(post.url)
+    if post.post_hint in ("hosted:video", ) and include_reddit_videos:
+        urls.append(post.url)
+    if post.post_hint in ("image", ):
         urls.append(post.url)
     if post.selftext:
-        for url in get_urls_in_string(post.selftext):
+        for url in get_urls_in_string(
+            post.selftext,
+            include_reddit_videos=include_reddit_videos,
+            include_external_videos=include_external_videos,
+        ):
             urls.append(url)
     return urls
 
 
-def get_urls_in_string(s):
+def get_urls_in_string(s, include_reddit_videos=True, include_external_videos=False):
     """
-    Find all URLs in a string and return them
+    Find all URLs matching certain conditions in a string and return them
 
     @param s: string to search for URLs
     @type s: L{str}
+    @param include_reddit_videos: whether reddit videos should be included
+    @type include_reddit_videos: L{bool}
+    @param include_external_videos: whether non-reddit videos should be included
+    @type include_external_videos: L{bool}
     @return: a list of URLs found
     @rtype: L{list} of L{str}
     """
     return []  # not implemented
 
 
-def download_all(session, mediadir, sleep=0.5, enable_post_processing=True):
+def download_all(
+    session,
+    mediadir,
+    sleep=0.5,
+    enable_post_processing=True,
+    download_reddit_videos=True,
+    download_external_videos=False,
+):
     """
     Download all files of posts.
 
@@ -253,6 +356,10 @@ def download_all(session, mediadir, sleep=0.5, enable_post_processing=True):
     @type mediadir: L{str}
     @param sleep: sleep time between downloads in seconds
     @type sleep: L{int} or L{float}
+    @param download_reddit_videos: whether reddit videos should be downloaded
+    @type include_reddit_videos: L{bool}
+    @param download_external_videos: whether non-reddit videos should be downloaded
+    @type include_external_videos: L{bool}
     @param enable_post_processing: whether post-processing should be applied
     @type enable_post_processing: L{bool}
     """
@@ -264,7 +371,11 @@ def download_all(session, mediadir, sleep=0.5, enable_post_processing=True):
         yield_per=1000,
     )
     for post in tqdm.tqdm(session.execute(stmt).scalars(), desc="Searching posts", total=n, unit="posts"):
-        urls = get_urls_from_post(post)
+        urls = get_urls_from_post(
+            post,
+            include_reddit_videos=download_reddit_videos,
+            include_external_videos=download_external_videos,
+        )
         urls = [url for url in urls if not has_downloaded(session=session, url=url)]
         if not urls:
             continue
@@ -274,6 +385,7 @@ def download_all(session, mediadir, sleep=0.5, enable_post_processing=True):
                 url=url,
                 mediadir=mediadir,
                 enable_post_processing=enable_post_processing,
+                download_videos=(download_external_videos or download_reddit_videos),
             )
             time.sleep(sleep)
 
@@ -286,10 +398,14 @@ class MediaFileManager(object):
     @type session: L{sqlalchemy.orm.Session}
     @ivar enabled: if the rewrite is enabled in the first place
     @type enabled: L{bool}
+    @ivar images_enabled: if media links should be rewritten
+    @type images_enabled: L{bool}
+    @ivar videos_enabled: if video links should be rewritten
+    @type videos_enabled: L{bool}
     @ivar referenced_files: a list of files referenced by the rewritten URLs
     @type referenced_files: L{list} of L{int}
     """
-    def __init__(self, session, enabled=True):
+    def __init__(self, session, enabled=True, images_enabled=True, videos_enabled=True):
         """
         The default constructor.
 
@@ -297,9 +413,15 @@ class MediaFileManager(object):
         @type session: L{sqlalchemy.orm.Session}
         @param enabled: if the rewrite is enabled in the first place
         @type enabled: L{bool}
+        @param images_enabled: if media links should be rewritten
+        @type images_enabled: L{bool}
+        @param videos_enabled: if video links should be rewritten
+        @type videos_enabled: L{bool}
         """
         self.session = session
         self.enabled = enabled
+        self.images_enabled = images_enabled
+        self.videos_enabled = videos_enabled
         self.referenced_files = []
 
     def reset(self):
@@ -321,7 +443,13 @@ class MediaFileManager(object):
         @return: whether the link should be rewritten
         @rtype: L{str}
         """
-        return self.enabled  # not implemented
+        if not self.enabled:
+            return False
+        if mimetype_is_image(mediafile.mimetype) and self.images_enabled:
+            return True
+        if mimetype_is_video(mediafile.mimetype) and self.videos_enabled:
+            return True
+        return False
 
     def rewrite_url(self, url, to_root):
         """

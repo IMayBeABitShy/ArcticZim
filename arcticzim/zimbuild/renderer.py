@@ -280,8 +280,10 @@ class RenderOptions(object):
     @type with_stats: L{bool}
     @ivar with_users: if nonzero, include user pages<
     @type with_users: L{bool}
+    @ivar with_videos: if nonzero, include videos
+    @type with_videos: L{bool}
     """
-    def __init__(self, with_stats=True, with_users=True):
+    def __init__(self, with_stats=True, with_users=True, with_videos=False):
         """
         The default constructor.
 
@@ -289,9 +291,12 @@ class RenderOptions(object):
         @type with_stats: L{bool}
         @param with_users: if nonzero, include user pages<
         @type with_users: L{bool}
+        @param with_videos: if nonzero, include videos
+        @type with_videos: L{bool}
         """
         self.with_stats = with_stats
         self.with_users = with_users
+        self.with_videos = with_videos
 
 
 class HtmlRenderer(object):
