@@ -8,6 +8,10 @@
             {% with gallery_data=post.media_metadata|load_json, to_root=to_root %}
                 {% include "gallery.html.jinja" %}
             {% endwith %}
+        {% elif post.is_poll %}
+            {% with poll_data=post.poll_data|load_json, post=post, to_root=to_root %}
+                {% include "poll.html.jinja" %}
+            {% endwith %}
         {% elif (post.post_hint in ("rich:video", "hosted:video")) %}
             {% if options.with_videos %}
                 <video autoplay=1 controls=1 loop=1 src="{{ post.url|rewrite_url(to_root) }}">Video</video>

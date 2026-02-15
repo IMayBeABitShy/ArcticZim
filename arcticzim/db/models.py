@@ -198,6 +198,16 @@ class Post(Base):
         return root_comment
 
     @property
+    def is_poll(self):
+        """
+        Check whether this post is a poll or not.
+
+        @return: True if this post is a poll, False otherwise
+        @rtype: L{bool}
+        """
+        return (self.poll_data is not None)
+
+    @property
     def icon_name(self):
         """
         Return the name of the icon to use for this post type
@@ -205,7 +215,7 @@ class Post(Base):
         @return: the name of the icon to use
         @rtype: L{str}
         """
-        if self.poll_data is not None:
+        if self.is_poll:
             return "poll"
         icons = {
             "rich:video": "video",

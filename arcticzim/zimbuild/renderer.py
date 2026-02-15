@@ -420,12 +420,25 @@ class HtmlRenderer(object):
             ),
         )
         # add poll data if necessary
-        if post.poll_data:
+        if post.is_poll:
+            raw_poll_data = json.loads(post.poll_data)
+            if not raw_poll_data:
+                # for some reason, post.poll_data can be false
+                poll_data = {}
+            else:
+                poll_data = {
+                    "labels": [option["text"] for option in raw_poll_data["options"]],
+                    "datasets": [
+                        {
+                            "data": [option["vote_count"] for option in raw_poll_data["options"]],
+                        }
+                    ],
+                }
             result.add(
                 JsonObject(
                     path="r/{}/{}/poll.json".format(post.subreddit.name, post.id),
                     title="Poll data for {}".format(post.id),
-                    content=post.poll_data,
+                    content=poll_data,
                 )
             )
         # add referenced files
@@ -1040,6 +1053,17 @@ class HtmlRenderer(object):
                 path="scripts/chart.js",
                 content=script,
                 title="Chart.js",
+            ),
+        )
+        # polls
+        path = get_resource_file_path("poll.js")
+        with open(path, "r", encoding="utf-8") as fin:
+            script = fin.read()
+        result.add(
+            Script(
+                path="scripts/poll.js",
+                content=script,
+                title="Poll.js",
             ),
         )
         # collapser

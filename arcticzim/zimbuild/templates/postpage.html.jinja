@@ -9,6 +9,10 @@
 
 {% block scripts %}
     <script src="{{ to_root }}/scripts/collapser.js"></script>
+    {% if post.is_poll %}
+        <script src="{{ to_root }}/scripts/chart.js"></script>
+        <script src="{{ to_root }}/scripts/poll.js"></script>
+    {% endif %}
 {% endblock %}
 
 {% block title %}

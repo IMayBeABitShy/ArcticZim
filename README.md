@@ -10,6 +10,7 @@ This project is still a work-in-progress.
 
  - text-posts are implemented
  - media posts (both images, galleries and videos) are implemented and optional
+ - polls are implemented
  - comment trees rendered
    - can be collapsed
  - subreddit pages are implemented
@@ -21,7 +22,6 @@ This project is still a work-in-progress.
 **Missing/planned features:**
 
  - crossposts
- - polls
  - subreddit wikis
  - various style/layout improvements, especially for mobile
  - comment media
