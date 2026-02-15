@@ -24,7 +24,8 @@ from .util import chunked
 POST_COLUMNS = [c.key for c in Post.__table__.columns]
 POST_FILTERS = {
     "poll_data": json.dumps,
-    "edited": lambda x: {False: 0, True: -1}.get(x, x)
+    "media_metadata": json.dumps,
+    "edited": lambda x: {False: 0, True: -1}.get(x, x),
 }
 COMMENT_COLUMNS = [c.key for c in Comment.__table__.columns]
 COMMENT_FILTERS = {

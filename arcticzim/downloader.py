@@ -4,6 +4,7 @@ This module contains the code for downloading media files.
 import os
 import hashlib
 import time
+import json
 from mimetypes import guess_type
 from urllib.parse import urlparse, parse_qsl, unquote_plus, urlunparse, urlencode
 
@@ -320,6 +321,14 @@ def get_urls_from_post(post, include_reddit_videos=True, include_external_videos
             include_external_videos=include_external_videos,
         ):
             urls.append(url)
+    if post.is_gallery:
+        media_metadata = json.loads(post.media_metadata)
+        if media_metadata:
+            for img_data in media_metadata.values():
+                if "s" in img_data:
+                    urls.append(img_data["s"]["u"])
+                elif "p" in img_data:
+                    urls.append(img_data["p"][-1]["u"])
     return urls
 
 

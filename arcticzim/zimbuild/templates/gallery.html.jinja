@@ -1,0 +1,7 @@
+{# This is a template for a gallery. Expects "gallery_data" and "to_root" as arguments. #}
+
+<DIV class="gallery">
+    {% for img_data in gallery_data.values() %}
+        <img src="{{ (img_data["s"]["u"] if "s" in img_data else img_data["p"][-1]["u"])|rewrite_url(to_root) }}" alt="Image"></img>
+    {% endfor %}
+</DIV>

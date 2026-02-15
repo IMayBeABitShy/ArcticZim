@@ -345,6 +345,7 @@ class HtmlRenderer(object):
         self.environment.filters["first_elements"] = self._first_elements
         self.environment.filters["default_index"] = self._default_index
         self.environment.filters["rewrite_url"] = self.filemanager.rewrite_url
+        self.environment.filters["load_json"] = json.loads
         self.environment.filters["debug"] = print
 
         # configure tests

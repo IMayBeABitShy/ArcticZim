@@ -113,6 +113,7 @@ class Post(Base):
     link_flair_text_color: Mapped[Optional[str]] = mapped_column(Unicode(16))
     link_flair_type: Mapped[Optional[str]] = mapped_column(Unicode(8))
     locked: Mapped[Optional[bool]]
+    media_metadata: Mapped[Optional[str]] = mapped_column(Unicode(4096))
     media_only: Mapped[Optional[bool]]
     name: Mapped[str] = mapped_column(String(16), index=True, unique=True)
     no_follow: Mapped[Optional[bool]]
