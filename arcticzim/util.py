@@ -14,8 +14,8 @@ from urllib.parse import urlparse
 
 
 ALLOWED_WORD_LETTERS = re.compile(r"[^\w|\-]")
-# from https://stackoverflow.com/a/3809435
-URL = re.compile("https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)")
+# from https://stackoverflow.com/a/3809435 (modified)
+URL = re.compile(r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*[-a-zA-Z0-9@:%_\+.~#?&//=])")
 
 
 def format_timedelta(seconds):
@@ -251,7 +251,7 @@ def get_urls_from_string(s):
     @return: a list of URLs
     @rtype: L{str}
     """
-    return list(URL.findall(s))
+    return [s[m.start():m.end()] for m in URL.finditer(s)]
 
 
 def parse_reddit_url(url):

@@ -9,13 +9,13 @@ from mimetypes import guess_type
 from urllib.parse import urlparse, parse_qsl, unquote_plus, urlunparse, urlencode
 
 from sqlalchemy import select, func
-from sqlalchemy.orm import undefer
+from sqlalchemy.orm import undefer, selectinload
 import requests
 import tqdm
 from yt_dlp import YoutubeDL
 from redvid import Downloader as RedvidDL
 
-from .db.models import MediaFile, Post
+from .db.models import MediaFile, Post, Comment
 from .imgutils import minimize_image, mimetype_is_image, mimetype_is_video
 from .util import get_urls_from_string
 
@@ -97,7 +97,7 @@ def has_downloaded(session, url, any_status=True):
 
 def download(session, url, mediadir, enable_post_processing=True, download_videos=True):
     """
-    Check if the URL has already been downloaded.
+    Download the media at the specified URL.
 
     @param session: sqlalchemy session
     @type session: L{sqlalchemy.orm.Session}
@@ -112,8 +112,10 @@ def download(session, url, mediadir, enable_post_processing=True, download_video
     """
     url_hash = hash_url(url)
     outpath = os.path.join(mediadir, url_hash)
+    guessed_mimetype = guess_type(urlparse(url).path)[0]
+    is_probably_image = (guessed_mimetype is not None) and (guessed_mimetype.startswith("image/"))
     try:
-        if is_ytdlp(url) or is_redvid(url):
+        if (is_ytdlp(url) or is_redvid(url)) and not is_probably_image:
             if not download_videos:
                 return
             if is_redvid(url):
@@ -140,7 +142,7 @@ def download(session, url, mediadir, enable_post_processing=True, download_video
                 raise DownloadFailed() from e
             mimetype = r.headers.get("content-type", None)
             if mimetype is None:
-                mimetype = guess_type(url)
+                mimetype = guess_type(urlparse(url).path)[0]
             elif ";" in mimetype:
                 mimetype = mimetype[:mimetype.find(";")]
             hasher = hashlib.md5()
@@ -297,7 +299,7 @@ def post_process(mediadir, mediafile):
         mediafile.mimetype = mimetype
 
 
-def get_urls_from_post(post, include_reddit_videos=True, include_external_videos=False):
+def get_urls_from_post(post, include_reddit_videos=True, include_external_videos=False, include_comments=False):
     """
     Return all URLs used in a post
 
@@ -307,6 +309,8 @@ def get_urls_from_post(post, include_reddit_videos=True, include_external_videos
     @type include_reddit_videos: L{bool}
     @param include_external_videos: whether non-reddit videos should be included
     @type include_external_videos: L{bool}
+    @param include_comments: if nonzero, download media in comments too
+    @type include_comments: L{bool}
     @return: a list of posts
     @rtype: L{list} of L{str}
     """
@@ -332,6 +336,9 @@ def get_urls_from_post(post, include_reddit_videos=True, include_external_videos
                     urls.append(img_data["s"]["u"])
                 elif "p" in img_data:
                     urls.append(img_data["p"][-1]["u"])
+    if include_comments:
+        for comment in post.comments:
+            urls += get_media_urls_from_string(comment.body)
     return urls
 
 
@@ -348,7 +355,23 @@ def get_media_urls_from_string(s, include_reddit_videos=True, include_external_v
     @return: a list of URLs found
     @rtype: L{list} of L{str}
     """
-    return []  # not implemented
+    urls = get_urls_from_string(s)
+    found_urls = []
+    for url in urls:
+        mimetype = guess_type(urlparse(url).path)[0]
+        if mimetype is None:
+            # no guess
+            continue
+        if mimetype.startswith("video/"):
+            if is_redvid(url):
+                if include_reddit_videos:
+                    found_urls.append(url)
+            elif is_ytdlp(url):
+                if include_external_videos:
+                    found_urls.append(url)
+        elif mimetype.startswith("image/"):
+            found_urls.append(url)
+    return found_urls
 
 
 def download_all(
@@ -358,6 +381,7 @@ def download_all(
     enable_post_processing=True,
     download_reddit_videos=True,
     download_external_videos=False,
+    include_comments=False,
 ):
     """
     Download all files of posts.
@@ -374,11 +398,15 @@ def download_all(
     @type include_external_videos: L{bool}
     @param enable_post_processing: whether post-processing should be applied
     @type enable_post_processing: L{bool}
+    @param include_comments: if nonzero, download media in comments too
+    @type include_comments: L{bool}
     """
     n = session.execute(select(func.count(Post.uid))).one()[0]
     stmt = select(Post).options(
         undefer(Post.url),
         undefer(Post.selftext),
+        selectinload(Post.comments),
+        undefer(Post.comments, Comment.body),
     ).execution_options(
         yield_per=1000,
     )
@@ -387,8 +415,9 @@ def download_all(
             post,
             include_reddit_videos=download_reddit_videos,
             include_external_videos=download_external_videos,
+            include_comments=include_comments,
         )
-        urls = [url for url in urls if not has_downloaded(session=session, url=url)]
+        urls = set([url for url in urls if not has_downloaded(session=session, url=url)])
         if not urls:
             continue
         for url in tqdm.tqdm(urls, desc="downloading files for {}".format(post.id), total=len(urls), unit="files"):
@@ -508,7 +537,7 @@ class MediaFileManager(object):
         """
         urls = get_media_urls_from_string(text)
         for url in urls:
-            new_url = rewrite_url(url, to_root=to_root)
+            new_url = self.rewrite_url(url, to_root=to_root)
             if new_url != url:
                 text = text.replace(url, new_url)
         return text

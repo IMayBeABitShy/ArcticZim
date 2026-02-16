@@ -134,8 +134,10 @@ def fetch_all_references(session, sleep=1):
             continue
         for reference in tqdm.tqdm(references, desc="Fetching referenced objects for {}".format(post.id), total=len(references), unit="obj"):
             if reference["type"] in ("post", "comment"):
-                fetch_post(session=session, postid=reference["post"], sleep=sleep)
-                did_fetch_something_new = True
+                if not has_post_locally(session, postid=reference["post"]):
+                    # we need a second check in case the same post referenced the same post multiple times
+                    fetch_post(session=session, postid=reference["post"], sleep=sleep)
+                    did_fetch_something_new = True
             time.sleep(sleep)
     # wikipages
     n = session.execute(select(func.count(WikiPage.uid))).one()[0]
@@ -155,10 +157,12 @@ def fetch_all_references(session, sleep=1):
         ]
         if not references:
             continue
-        for reference in tqdm.tqdm(urls, desc="Fetching referenced objects for {}/wiki/{}".format(wikipage.subreddit_name, wikipage.basepath), total=len(urls), unit="obj"):
+        for reference in tqdm.tqdm(references, desc="Fetching referenced objects for {}/wiki/{}".format(wikipage.subreddit_name, wikipage.basepath), total=len(references), unit="obj"):
             if reference["type"] in ("post", "comment"):
-                fetch_post(session=session, postid=e["post"], sleep=sleep)
-                did_fetch_something_new = True
+                if not has_post_locally(session, postid=reference["post"]):
+                    # we need a second check in case the same post referenced the same post multiple times
+                    fetch_post(session=session, postid=reference["post"], sleep=sleep)
+                    did_fetch_something_new = True
             time.sleep(sleep)
     return did_fetch_something_new
 
@@ -234,11 +238,11 @@ def get_wikipages_for_subreddit(subreddit_name):
         page = WikiPage(
             subreddit_name=subreddit_name,
             path=rawpage["path"],
-            content=rawpage["content"],
-            revision_date=rawpage["revision_date"],
-            revision_author=rawpage["revision_author"],
+            content=rawpage.get("content", "[page empty or content not available]"),
+            revision_date=rawpage.get("revision_date", 0),
+            revision_author=rawpage.get("revision_author", None) or "[Author unknown]",
             revision_reason=rawpage.get("revision_reason", None),
-            retrieved_on=rawpage["retrieved_on"],
+            retrieved_on=rawpage.get("retrieved_on", 0),
         )
         pages.append(page)
     return pages
@@ -442,7 +446,8 @@ class ReferenceUrlRewriter(object):
         """
         urls = get_urls_from_string(text)
         for url in urls:
-            new_url = reddit_reference_to_url(url, to_root=to_root)
+            reference = parse_reddit_url(url)
+            new_url = self.rewrite_url(url, to_root=to_root)
             if new_url != url:
                 text = text.replace(url, new_url)
         return text

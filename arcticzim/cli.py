@@ -130,6 +130,7 @@ def run_media_download(ns):
             enable_post_processing=ns.post_processing,
             download_reddit_videos=ns.download_reddit_videos,
             download_external_videos=ns.download_external_videos,
+            include_comments=ns.include_comments,
         )
 
 
@@ -194,7 +195,7 @@ def main():
     fetch_parser.add_argument(
         "--sleep",
         action="store",
-        type=int,
+        type=float,
         default=1,
         help="how many seconds to wait between requests",
     )
@@ -237,6 +238,12 @@ def main():
         action="store_true",
         dest="download_external_videos",
         help="download videos NOT hosted on reddit",
+    )
+    mediadownload_parser.add_argument(
+        "--search-comments",
+        action="store_true",
+        dest="include_comments",
+        help="also download media linked in comments",
     )
 
     # parser for the ZIM build
