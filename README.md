@@ -11,6 +11,7 @@ This project is still a work-in-progress.
  - text-posts are implemented
  - media posts (both images, galleries and videos) are implemented and optional
  - polls are implemented
+ - crosspost support
  - comment trees rendered
    - can be collapsed
  - subreddit pages are implemented
@@ -23,7 +24,6 @@ This project is still a work-in-progress.
 
 **Missing/planned features:**
 
- - crossposts
  - various style/layout improvements, especially for mobile
  - comment media
  - selective generation of ZIM files
@@ -71,6 +71,8 @@ Simply run `arcticzim import --posts-file <path/to/posts/file> --comments-file <
 In this step, we'll fetch additional reddit data from Arctic Shift that was not part of the previously imported dumps. This includes, for example, subreddit wikis.
 
 The command you'll have to run is `arcticzim fetch-extra <database_url>`.
+
+Note that this will recursively search for references - if, for example, a post is referenced, it will be fetched, followed by a fetch for the subbreddit wiki, ... . If you don't want this, simply specify `--single` and only a single fetch round will be performed.
 
 ### Step 6: Download media
 

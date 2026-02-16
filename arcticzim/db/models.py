@@ -12,6 +12,8 @@ from sqlalchemy import ForeignKey, UniqueConstraint
 from sqlalchemy import String, Unicode
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from ..util import parse_reddit_url
+
 
 ARCTICZIM_USERNAME= "_ArcticZim"
 
@@ -239,6 +241,27 @@ class Post(Base):
             else:
                 return "link"
         return name
+
+    @property
+    def is_crosspost(self):
+        """
+        Return True if this post is a crosspost
+
+        @return: whether the post is a crosspost or not
+        @rtype: L{str}
+        """
+        parsed = parse_reddit_url(self.url)
+        if parsed is None:
+            # not a reddit url at all
+            return False
+        elif parsed["type"] != "post":
+            # not a post reference
+            return False
+        elif parsed["post"] == self.id:
+            # URL simply points to the same post
+            return False
+        else:
+            return True
 
 
 class Comment(Base):

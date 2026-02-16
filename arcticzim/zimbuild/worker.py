@@ -33,6 +33,7 @@ from .renderer import HtmlRenderer, RenderResult, SubredditInfo, SUBREDDITS_ON_I
 from .statistics import query_post_stats
 from ..util import ensure_iterable
 from ..downloader import MediaFileManager
+from ..fetcher import ReferenceUrlRewriter
 from ..db.models import Post, User, Comment, Subreddit, WikiPage, SubredditRule
 
 
@@ -307,12 +308,16 @@ class Worker(object):
         self.session = Session(engine)
         self.options = options
         self.renderer = HtmlRenderer(
+            worker=self,
             options=render_options,
             filemanager=MediaFileManager(
                 session=self.session,
                 enabled=self.options.with_media,
                 images_enabled=self.options.with_media,
                 videos_enabled=self.options.with_videos,
+            ),
+            reference_rewriter=ReferenceUrlRewriter(
+                session=self.session,
             ),
         )
 
@@ -482,6 +487,47 @@ class Worker(object):
             self.log("Rendered post, submitting result...")
             self.handle_result(result)
             self.log("Done.")
+
+    def directly_render_postsummary(self, post_id, to_root):
+        """
+        Render a post summary, directly returning the HTML.
+
+        This is a helper function for rendering crossposts. It is called
+        by the renderer to load the post and will call the renderer again.
+
+        @param task: task to process
+        @type task: L{PostRenderTask}
+        @param to_root: rootification prefix (see templates)
+        @type to_root: L{str}
+        @return: the rendered html
+        @rtype: L{str}
+        """
+        # setup load options
+        if self.options.eager:
+            options = (
+                undefer(Post.selftext),
+                undefer(Post.title),
+                selectinload(Post.comments).undefer(Comment.body),
+                joinedload(Post.subreddit),
+                joinedload(Post.author),
+            )
+        else:
+            options = (
+                undefer(Post.selftext),
+                undefer(Post.title),
+                selectinload(Post.comments).undefer(Comment.body),
+            )
+        self.log("Retrieving post for postsummary...")
+        post = self.session.scalars(
+            select(Post)
+            .where(Post.id == post_id)
+            .options(
+                *options,
+            )
+        ).first()
+        self.log("Retrieved post, rendering postsummary...")
+        result = self.renderer.directly_render_post_summary(post, to_root=to_root)
+        return result
 
     def process_subreddit_task(self, task):
         """

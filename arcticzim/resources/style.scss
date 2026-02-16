@@ -415,11 +415,12 @@ A {
   padding: 0.5em;
   padding-left: 2em;
   padding-right: 2em;
+  margin-bottom: 1em;
   border: 1px solid $feature_color;
   border-radius: 1em;
   background-color: $foreground_color;
   display: inline-block;
-  width: 100%;
+  width: 90%;
 }
 
 .subredditinfo-link {

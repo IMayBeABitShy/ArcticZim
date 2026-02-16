@@ -3,14 +3,19 @@ Various utility functions.
 
 @var ALLOWED_WORD_LETTERS: a regular expression pattern used to to identify where words end.
 @type ALLOWED_WORD_LETERS: L{re.Pattern}
+@var URL: a regular expression matching likely URLs
+@type URL: L{re.Pattern}
 """
 import datetime
 import re
 import os
 import decimal
+from urllib.parse import urlparse
 
 
 ALLOWED_WORD_LETTERS = re.compile(r"[^\w|\-]")
+# from https://stackoverflow.com/a/3809435
+URL = re.compile("https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)")
 
 
 def format_timedelta(seconds):
@@ -233,6 +238,71 @@ def chunked(iterable, n):
             current = []
     if current:
         yield current
+
+
+def get_urls_from_string(s):
+    """
+    Find all URLs in a string.
+
+    No guarantees are made about the validity or completenes of the result.
+
+    @param s: string to search for URLs
+    @type s: L{str}
+    @return: a list of URLs
+    @rtype: L{str}
+    """
+    return list(URL.findall(s))
+
+
+def parse_reddit_url(url):
+    """
+    Parse a reddit URL.
+
+    The result is a dict containing some info, most importantly the "type" key.
+
+    @param url: URL to parse
+    @type url: L{str}
+    @return: info about the URL if it is a reddit url, otherwise L{None}
+    @rtype: L{dict} or L{None}
+    """
+    if isinstance(url, bytes):
+        url = url.decode("utf-8")
+    if url == "":
+        return None
+    parts = urlparse(url)
+    host = parts.hostname
+    if (host is None) or not (host.endswith("reddit.com") or host.endswith("redd.it")):
+        # not a reddit link
+        return None
+    path = parts.path
+    segments = path.split("/")
+    if segments and not segments[0]:
+        segments.pop(0)
+    if segments and not segments[-1]:
+        segments.pop(-1)
+    if len(segments) == 0:
+        # just a general reddit url
+        return None
+    if segments[0] in ("u", "user"):
+        # a user reference
+        username = segments[1]
+        return {"type": "user", "username": username}
+    elif segments[0] == "r":
+        # a subreddit, post or comment reference
+        subredditname = segments[1]
+        if (len(segments) >= 6) and (segments[2] == "comments"):
+            # a comment reference
+            return {"type": "comment", "subreddit": subredditname, "post": segments[3], "comment": segments[5]}
+        if (len(segments) >= 4) and (segments[2] == "comments"):
+            # a post reference
+            return {"type": "post", "subreddit": subredditname, "post": segments[3]}
+        else:
+            # just a subreddit reference
+            return {"type": "subreddit", "subreddit": subredditname}
+    else:
+        # unknown reddit reference
+        return None
+
 
 
 if __name__ == "__main__":

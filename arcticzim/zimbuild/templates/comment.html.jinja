@@ -15,7 +15,7 @@
             {{ comment.body|render_comment_text(to_root=to_root) }}
         </DIV>
         {% if with_children and comment.children|length > 0 %}
-            {% with to_root=to_root, layer=layer+1, with_util_links=with_util_links, comments=comment.children %}
+            {% with to_root=to_root, layer=layer+1, with_util_links=with_util_links, comments=comment.children|sort(attribute="score", reverse=True) %}
                 {% include "commentlist.html.jinja" %}
             {% endwith %}
         {% endif %}

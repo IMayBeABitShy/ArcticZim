@@ -17,6 +17,7 @@ from redvid import Downloader as RedvidDL
 
 from .db.models import MediaFile, Post
 from .imgutils import minimize_image, mimetype_is_image, mimetype_is_video
+from .util import get_urls_from_string
 
 
 
@@ -39,11 +40,11 @@ def unify_url(url):
     @return: a unified URL
     @rtype: L{str}
     """
-    if url == "":
-        return ""
     # modified version of https://stackoverflow.com/a/9468284
     if isinstance(url, bytes):
         url = url.decode("utf-8")
+    if url == "":
+        return ""
     parts = urlparse(url)
     _query = urlencode(
         list(sorted(frozenset(parse_qsl(parts.query)))),
@@ -317,7 +318,7 @@ def get_urls_from_post(post, include_reddit_videos=True, include_external_videos
     if post.post_hint in ("image", ):
         urls.append(post.url)
     if post.selftext:
-        for url in get_urls_in_string(
+        for url in get_media_urls_from_string(
             post.selftext,
             include_reddit_videos=include_reddit_videos,
             include_external_videos=include_external_videos,
@@ -334,9 +335,9 @@ def get_urls_from_post(post, include_reddit_videos=True, include_external_videos
     return urls
 
 
-def get_urls_in_string(s, include_reddit_videos=True, include_external_videos=False):
+def get_media_urls_from_string(s, include_reddit_videos=True, include_external_videos=False):
     """
-    Find all URLs matching certain conditions in a string and return them
+    Find all media URLs matching certain conditions in a string and return them
 
     @param s: string to search for URLs
     @type s: L{str}
@@ -505,7 +506,7 @@ class MediaFileManager(object):
         @return: the rewritten text
         @rtype: L{str}
         """
-        urls = get_urls_in_string(text)
+        urls = get_media_urls_from_string(text)
         for url in urls:
             new_url = rewrite_url(url, to_root=to_root)
             if new_url != url:

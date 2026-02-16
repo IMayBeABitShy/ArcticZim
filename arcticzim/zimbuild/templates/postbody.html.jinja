@@ -18,6 +18,10 @@
             {% else %}
                 <P class="arcticzim-message">[Video not included]</P>
             {% endif %}
+        {% elif post.is_crosspost and (post.url is local_post_url) %}
+            <DIV class="crosspost-container">
+                {{ post.url|render_postsummary_by_url(to_root) }}
+            </DIV>
         {% endif %}
         <DIV class="postbodytext mdbody"> {{ post.selftext|render_post_text(to_root=to_root) }}</DIV>
     {% endblock %}

@@ -79,7 +79,19 @@ def run_fetch(ns):
     print("Done. Creating databse session...")
     with Session(engine) as session:
         print("Done. Starting fetch...")
-        fetch_all(session, sleep=ns.sleep)
+        rnd = 1
+        while True:
+            print("Fetch round #{}".format(rnd))
+            did_fetch_something = fetch_all(session, sleep=ns.sleep)
+            if ns.single:
+                print("--single specified, stopping after first fetch round")
+                break
+            if did_fetch_something:
+                print("Fetched something new, starting another fetch round in case some new references have been added.")
+                rnd += 1
+            else:
+                print("Did not fetch anything new.")
+                break
     print("Fetch finished in  {}".format(format_timedelta(time.time() - start)))
 
 
@@ -185,6 +197,11 @@ def main():
         type=int,
         default=1,
         help="how many seconds to wait between requests",
+    )
+    fetch_parser.add_argument(
+        "--single",
+        action="store_true",
+        help="Perform at most a single fetch round.",
     )
 
     mediadownload_parser = subparsers.add_parser(

@@ -25,7 +25,7 @@ try:
 except ImportError:
     minify_html = None
 
-from ..util import format_size, format_number, get_resource_file_path
+from ..util import format_size, format_number, get_resource_file_path, parse_reddit_url
 from ..downloader import MediaFileManager
 from .buckets import BucketMaker
 
@@ -303,26 +303,36 @@ class HtmlRenderer(object):
     """
     The HTML renderer renders HTML pages for various objects.
 
+    @ivar worker: worker this renderer is for
+    @type worker: L{arcticzim.zimbuild.worker.Worker}
     @ivar environment: the jinja2 environment used to render templates
     @type environment: L{jinja2.Environment}
     @ivar options: render options
     @type options: L{RenderOptions}
     @ivar filemanager: the media file manager
     @type filemanager: L{arcticzim.downloader.MediaFileManager}
+    @ivar reference_rewrite: the URL rewriter for reddit references
+    @type reference_rewriter: L{arcticzim.fetcher.ReferenceUrlRewriter}
     """
-    def __init__(self, options, filemanager):
+    def __init__(self, worker, options, filemanager, reference_rewriter):
         """
         The default constructor.
 
+        @param worker: worker this renderer is for
+        @type worker: L{arcticzim.zimbuild.worker.Worker}
         @param options: render options
         @type options: L{RenderOptions}
         @param filemanager: the media file manager
         @type filemanager: L{arcticzim.downloader.MediaFileManager}
+        @param reference_rewrite: the URL rewriter for reddit references
+        @type reference_rewriter: L{arcticzim.fetcher.ReferenceUrlRewriter}
         """
         assert isinstance(options, RenderOptions)
         assert isinstance(filemanager, MediaFileManager)
+        self.worker = worker
         self.options = options
         self.filemanager = filemanager
+        self.reference_rewriter = reference_rewriter
 
         # setup jinja environment
         self.environment = Environment(
@@ -345,13 +355,15 @@ class HtmlRenderer(object):
         self.environment.filters["format_timestamp"] = self._format_timestamp
         self.environment.filters["first_elements"] = self._first_elements
         self.environment.filters["default_index"] = self._default_index
-        self.environment.filters["rewrite_url"] = self.filemanager.rewrite_url
+        self.environment.filters["rewrite_url"] = self._rewrite_url_filter
         self.environment.filters["load_json"] = json.loads
         self.environment.filters["first_nonzero"] = self._first_nonzero_filter
+        self.environment.filters["render_postsummary_by_url"] = self._render_postsummary_by_url
         self.environment.filters["debug"] = print
 
         # configure tests
         self.environment.tests["date"] = self._is_date
+        self.environment.tests["local_post_url"] = self._is_local_post_url
 
     @staticmethod
     def minify_html(s):
@@ -449,6 +461,26 @@ class HtmlRenderer(object):
         # add referenced files
         self._add_file_references(result)
         return result
+
+    def directly_render_post_summary(self, post, to_root):
+        """
+        Render a post summary, directly returning the HTML.
+
+        @param post: post to render
+        @type post: L{arcticzim.db.models.Post}
+        @param to_root: rootification prefix (see templates)
+        @type to_root: L{str}
+        @return: the rendered pages and redirects
+        @rtype: L{RenderResult}
+        """
+        summary_template = self.environment.get_template("postsummary.html.jinja")
+        post_page = summary_template.render(
+            post=post,
+            with_subreddit=True,
+            with_util_links=True,
+            to_root=to_root,
+        )
+        return post_page
 
     def render_subreddit(self, subreddit, sort="top", posts=None, num_posts=None):
         """
@@ -1252,6 +1284,19 @@ class HtmlRenderer(object):
 
     # =========== filters ===============
 
+    def _rewrite_url_filter(self, value, to_root):
+        """
+        Rewrite a URL.
+
+        @param value: URL to rewrite
+        @type value: L{str}
+        @param to_root: same as in the templates
+        @type to_root: L{str}
+        """
+        value = self.filemanager.rewrite_url(value, to_root=to_root)
+        value = self.reference_rewriter.rewrite_url(value, to_root=to_root)
+        return value
+
     def _render_comment_text_filter(self, value, to_root):
         """
         Render a comment body, returning the rendered html.
@@ -1263,11 +1308,16 @@ class HtmlRenderer(object):
         @return: the rendered HTML of the comment text
         @rtype: L{str}
         """
+        rewritten = self.filemanager.rewrite_urls_in_text(
+            value,
+            to_root=to_root,
+        )
+        rewritten = self.reference_rewriter.rewrite_urls_in_text(
+            rewritten,
+            to_root=to_root,
+        )
         rendered = mistune.html(
-            self.filemanager.rewrite_urls_in_text(
-                value,
-                to_root=to_root,
-            )
+            rewritten,
         )
         return rendered
 
@@ -1359,6 +1409,23 @@ class HtmlRenderer(object):
                 return v
         return v
 
+    def _render_postsummary_by_url(self, url, to_root):
+        """
+        Render a postsummary for a post with a specific url.
+
+        @param url: (reddit) url to post
+        @type url: L{str}
+        @param to_root: same as in templates
+        @type to_root: L{str}
+        @return: the rendered post summary
+        @rtype: L{str}
+        """
+        reference = parse_reddit_url(url)
+        if (reference is None) or (reference["type"] != "post"):
+            raise ValueError("Error: not a reddit reference")
+        post_id = reference["post"]
+        return self.worker.directly_render_postsummary(post_id, to_root=to_root)
+
     # =========== tests ===============
 
     def _is_date(self, obj):
@@ -1371,4 +1438,22 @@ class HtmlRenderer(object):
         @rtype: L{bool}
         """
         return isinstance(obj, (datetime.date, datetime.datetime))
+
+    def _is_local_post_url(self, url):
+        """
+        Return True if url is a url referencing an post that is locally available.
+
+        @param url: url to check
+        @type url: L{str}
+        @return: whether the url points to a post that is locally available
+        @rtype: L{bool}
+        """
+        if not isinstance(url, str):
+            return False
+        parsed = parse_reddit_url(url)
+        if parsed is None:
+            return False
+        if parsed["type"] != "post":
+            return False
+        return self.reference_rewriter.should_rewrite(parsed)
 
