@@ -33,7 +33,7 @@ from .renderer import HtmlRenderer, RenderResult, SubredditInfo, SUBREDDITS_ON_I
 from .statistics import query_post_stats
 from ..util import ensure_iterable
 from ..downloader import MediaFileManager
-from ..db.models import Post, User, Comment, Subreddit
+from ..db.models import Post, User, Comment, Subreddit, WikiPage
 
 
 MARKER_WORKER_STOPPED = "stopped"
@@ -123,7 +123,7 @@ class SubredditRenderTask(Task):
 
         @param subreddit_name: name of subreddit to render
         @type subreddit_name: L{str}
-        @param subtask: subtask (e.g. sort order) to render
+        @param subtask: subtask (e.g. sort order, wiki, stats) to render
         @type subtask: L{str}
         """
         assert isinstance(subreddit_name, str)
@@ -456,6 +456,7 @@ class Worker(object):
         if self.options.eager:
             options = (
                 undefer(Post.selftext),
+                undefer(Post.title),
                 selectinload(Post.comments).undefer(Comment.body),
                 joinedload(Post.subreddit),
                 joinedload(Post.author),
@@ -463,6 +464,7 @@ class Worker(object):
         else:
             options = (
                 undefer(Post.selftext),
+                undefer(Post.title),
                 selectinload(Post.comments).undefer(Comment.body),
             )
         for post_uid in task.post_uids:
@@ -490,6 +492,8 @@ class Worker(object):
         """
         if task.subtask == "stats":
             self.process_subreddit_stats_task(task)
+        elif task.subtask == "wiki":
+            self.process_subreddit_wiki_task(task)
         else:
             self.process_subreddit_sort_task(task)
 
@@ -522,6 +526,7 @@ class Worker(object):
             .options(
                 raiseload(Subreddit.posts),
                 raiseload(Subreddit.comments),
+                joinedload(Subreddit.wikipages),
             )
         )
         subreddit = self.session.scalars(subreddit_stmt).first()
@@ -546,6 +551,7 @@ class Worker(object):
             joinedload(Post.comments, Comment.author),
             noload(Post.comments, Comment.author, User.posts),
             noload(Post.comments, Comment.author, User.comments),
+            undefer(Post.title),
         )
         execution_options = {}
         if n_posts_in_subreddit >= MIN_POSTS_FOR_STREAM:
@@ -582,6 +588,50 @@ class Worker(object):
         self.handle_result(result)
         self.log("Done.")
 
+    def process_subreddit_wiki_task(self, task):
+        """
+        Process a received subreddit wiki task.
+
+        Note: this is called from L{Worker.process_subreddit_task}.
+
+        @param task: task to process
+        @type task: L{SubredditRenderTask}
+        """
+        # load subreddit
+        self.log("Loading subreddit...")
+        subreddit_stmt = (
+            select(Subreddit)
+            .where(
+                Subreddit.name == task.subreddit_name,
+            )
+            .options(
+                raiseload(Subreddit.posts),
+                raiseload(Subreddit.comments),
+                selectinload(Subreddit.wikipages),
+                undefer(Subreddit.wikipages, WikiPage.path),
+                undefer(Subreddit.wikipages, WikiPage.revision_reason),
+                undefer(Subreddit.wikipages, WikiPage.content),
+            )
+        )
+        subreddit = self.session.scalars(subreddit_stmt).first()
+        self.session.expunge(subreddit)  # prevent subreddit from being modified and storing objects
+        self.log("Subreddit loaded.")
+        if subreddit is None:
+            self.log("-> Subreddit not found!")
+            self.log("Submitting empty result...")
+            result = RenderResult()
+            self.handle_result(result)
+            self.log("Done.")
+            return
+
+        self.log("Rendering subreddit wiki...")
+        result = self.renderer.render_subreddit_wiki(
+            subreddit=subreddit,
+        )
+        self.log("Submitting result...")
+        self.handle_result(result)
+        self.log("Done.")
+
     def process_subreddit_stats_task(self, task):
         """
         Process a received subreddit statistics task.
@@ -601,6 +651,7 @@ class Worker(object):
             .options(
                 raiseload(Subreddit.posts),
                 raiseload(Subreddit.comments),
+                joinedload(Subreddit.wikipages),
             )
         )
         subreddit = self.session.scalars(subreddit_stmt).first()

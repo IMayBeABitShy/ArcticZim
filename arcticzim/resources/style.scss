@@ -370,6 +370,18 @@ A {
 }
 
 
+/* wiki */
+
+.wikipage, .wikiindex {
+  margin-left: 4em;
+  margin-right: 4em;
+}
+
+.wikipage-footer {
+  border-top: 1px dotted black;
+}
+
+
 /* index page */
 .welcomediv {
   background: $middleground_color;
@@ -454,6 +466,12 @@ A {
 
 .cur_page_button {
   border-bottom: 1px solid $uilink_color;
+}
+
+/* other */
+
+.errormsg {
+  color: red;
 }
 
 /* css code for autocomplete from https://www.w3schools.com/howto/howto_js_autocomplete.asp */

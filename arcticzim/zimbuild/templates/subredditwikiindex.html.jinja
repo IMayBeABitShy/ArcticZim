@@ -1,0 +1,13 @@
+{# This is subreddit wiki index. Expects "subreddit", "has_wiki" and "to_root" arguments. #}
+
+<DIV class="wikiindex">
+    <H1>List of of wiki pages</H1>
+
+    <UL class="wikiindexlist">
+        {% for wikipage in subreddit.wikipages %}
+            <LI>
+                <A href="{{ to_root }}/r/{{ subreddit.name }}/wiki/{{ wikipage.basepath }}">{{ wikipage.title }}</A>
+            </LI>
+        {% endfor %}
+    </UL>
+</DIV>

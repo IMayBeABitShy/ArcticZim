@@ -985,7 +985,7 @@ class ZimBuilder(object):
             select(func.count(Subreddit.name))
         ).scalar_one()
         self.log("found {} subreddits.".format(n_subreddits))
-        n_tasks_per_subreddit = 2
+        n_tasks_per_subreddit = 3
         if options.with_stats:
             # one extra task for the stats
             n_tasks_per_subreddit += 1
@@ -1308,7 +1308,7 @@ class ZimBuilder(object):
         """
         select_subreddit_names_stmt = select(Subreddit.name)
         result = session.execute(select_subreddit_names_stmt)
-        subtasks = ["top", "new"]
+        subtasks = ["top", "new", "wiki"]
         if with_stats:
             subtasks.append("stats")
         # send out tasks

@@ -1,0 +1,16 @@
+{# This is subreddit wiki page. Expects "wikipage", "has_wiki" and "to_root" arguments. #}
+
+<DIV class="wikipage">
+    <DIV class="wikipage-body">
+        {{ wikipage.content | render_wiki_text(to_root=to_root) }}
+    </DIV>
+    <DIV class="wikipage-footer">
+        <P>
+            Last edited by <A href="{% if options.with_users %}{{ to_root }}/u/{{ wikipage.revision_author }}/{% else %}javascript:void(0){%endif%}" class="authorlink">{{ wikipage.revision_author }}</A>
+            on {{ wikipage.revision_date|format_timestamp }}.
+            {% if wikipage.revision_reason %}
+                Reason: {{ wikipage.revision_reason }}
+            {% endif %}
+        </P>
+    </DIV>
+</DIV>

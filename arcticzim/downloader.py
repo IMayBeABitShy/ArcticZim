@@ -39,6 +39,8 @@ def unify_url(url):
     @return: a unified URL
     @rtype: L{str}
     """
+    if url == "":
+        return ""
     # modified version of https://stackoverflow.com/a/9468284
     if isinstance(url, bytes):
         url = url.decode("utf-8")
@@ -472,6 +474,9 @@ class MediaFileManager(object):
         @rtype: L{str}
         """
         unified_url = unify_url(url)
+        if not unified_url:
+            # we should not rewrite empty URLs
+            return url
         mf = self.session.execute(select(MediaFile).where(MediaFile.url == unified_url)).one_or_none()
         if mf is None:
             # file not downloaded, can't rewrite

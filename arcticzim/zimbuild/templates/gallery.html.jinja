@@ -2,6 +2,10 @@
 
 <DIV class="gallery">
     {% for img_data in gallery_data.values() %}
-        <img src="{{ (img_data["s"]["u"] if "s" in img_data else img_data["p"][-1]["u"])|rewrite_url(to_root) }}" alt="Image"></img>
+        {% if img_data.get("status", "ok") == "unprocessed" %}
+            <P class="errormsg">Error: gallery data not available.</P>
+        {% else %}
+            <img src="{{ (img_data["s"]["u"] if "s" in img_data else "", (img_data["p"][-1]["u"]) if img_data.get("p", [])|length > 0 else "")|first_nonzero|rewrite_url(to_root) }}" alt="Image"></img>
+        {% endif %}
     {% endfor %}
 </DIV>

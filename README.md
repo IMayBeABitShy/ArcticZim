@@ -17,12 +17,12 @@ This project is still a work-in-progress.
    - lists of posts are shown in both top and newest order
    - preview feature has already been implemented
  - user pages
+ - subreddit wikis
  - statistics (global, subreddit, user)
 
 **Missing/planned features:**
 
  - crossposts
- - subreddit wikis
  - various style/layout improvements, especially for mobile
  - comment media
  - selective generation of ZIM files
@@ -65,7 +65,13 @@ Simply run `arcticzim import --posts-file <path/to/posts/file> --comments-file <
 
 **Example:** let's assume you've downloaded r/kiwix, then the command would be `arcticzim import --posts-file r_kiwix_posts.jsonl --comments-file r_kiwix_comments.jsonl "sqlite:///db.sqlite"`
 
-### Step 5: Download media
+### Step 5: Fetch additional reddit content from Arctic Shift
+
+In this step, we'll fetch additional reddit data from Arctic Shift that was not part of the previously imported dumps. This includes, for example, subreddit wikis.
+
+The command you'll have to run is `arcticzim fetch-extra <database_url>`.
+
+### Step 6: Download media
 
 Now, let's download images, videos and so on. This step is optional, you can choose not to download any media.
 
@@ -73,7 +79,7 @@ Simply run `arcticzim download-media --download-reddit-videos --download-externa
 
 Note that `ffmpeg` may be required to download videos. If you don't want to download videos, you can simply skip those options.
 
-### Step 6: Build the ZIM file.
+### Step 7: Build the ZIM file.
 
 It's time to build the ZIM file. Now, before we get started, here are some important notes:
 
@@ -109,6 +115,7 @@ This section gives you a high level overview of the architecture. The architectu
 
 - **database models:** Arctic Zim uses [`sqlalchemy` ORM models](https://www.sqlalchemy.org/). These models are defined in `arcticzim.db.models`. They contain all the data about users, comments, ... . A particularity is that each `Post` contains a `root_comment`, which is a comment that serves as the parent for top-level comments.
 - **the importer:** the importer parses the datasets obtained from Arctic Shift and inserts them into the database. It's defined in `arcticzim.importer`. Note that we use batch-processing to improve performance.
+- **the fetcher** (`arcticzim.fetcher`) has the simple task of finding any additional Arctic Shift data that's needed and to retrieve it.
 - **the downloader:** fetches relevant media files. It has features that prevent duplication of both URLs and content. The code is in `arcticzim.downloader`.
 - **the builder** (`arcticzim.zimbuild.builder.ZimBuilder`) is responsible for actually building the ZIM. It setups the ZIM creator, add some basic items (e.g. icons) and metadata, then starts adding the actual content using stages. Each stage uses a creator thread (see below) and several workers (also see below). The builder then puts various tasks into the inqueue and awaits the worker and creator threads to finish.
 - **the workers** (`arcticzim.zimbuild.worker.Worker`) process tasks from the inqueue. They are responsible for querying the data from the database, which will then be passed to the render. Finally, each result is submitted to the outqueue before the next task is received. A worker stops when it receives a a stop task, which happens at the end of each stage.

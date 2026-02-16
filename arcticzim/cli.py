@@ -21,6 +21,7 @@ from .db.connection import ConnectionConfig
 from .importer import import_posts_from_file, import_comments_from_file, prepare_db
 from .zimbuild.builder import ZimBuilder, BuildOptions
 from .downloader import download_all as download_all_media
+from .fetcher import fetch_all
 from .util import format_timedelta
 
 
@@ -61,6 +62,25 @@ def run_import(ns):
         print("Done. Importing comments..")
         import_comments_from_file(session, path=ns.comments_file, batch_size=ns.batch_size)
     print("Import finished in  {}".format(format_timedelta(time.time() - start)))
+
+
+def run_fetch(ns):
+    """
+    Run the fetch-extra command.
+
+    @param ns: namespace containing arguments
+    @type ns: L{argparse.Namespace}
+    """
+    start = time.time()
+    print("Connecting to database...")
+    engine = _connection_config_from_ns(ns).connect()
+    print("Database connection established. Creating tables if necessary...")
+    Base.metadata.create_all(engine, checkfirst=True)
+    print("Done. Creating databse session...")
+    with Session(engine) as session:
+        print("Done. Starting fetch...")
+        fetch_all(session, sleep=ns.sleep)
+    print("Fetch finished in  {}".format(format_timedelta(time.time() - start)))
 
 
 def run_build(ns):
@@ -150,6 +170,23 @@ def main():
         help="how many posts and comments to import at once",
     )
 
+    fetch_parser = subparsers.add_parser(
+        "fetch-extra",
+        help="fetch additional data (e.g. wiki pages)",
+    )
+    fetch_parser.add_argument(
+        "database",
+        action="store",
+        help="database to load objects from, as sqlalchemy connection URL",
+    )
+    fetch_parser.add_argument(
+        "--sleep",
+        action="store",
+        type=int,
+        default=1,
+        help="how many seconds to wait between requests",
+    )
+
     mediadownload_parser = subparsers.add_parser(
         "download-media",
         help="download media files of posts",
@@ -213,6 +250,8 @@ def main():
 
     if ns.command == "import":
         run_import(ns)
+    elif ns.command == "fetch-extra":
+        run_fetch(ns)
     elif ns.command == "download-media":
         run_media_download(ns)
     elif ns.command == "build":

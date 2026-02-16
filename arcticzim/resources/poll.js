@@ -14,7 +14,7 @@ async function render_all_polls() {
 async function handle_poll(element) {
     // render a specific poll
     var poll_url = element.dataset.polllocation;
-    console.log("Fetching poll data...")
+    console.log("Fetching poll data...");
     var response = await fetch(poll_url);
     if (!response.ok) {
         // file not found
@@ -29,6 +29,10 @@ async function handle_poll(element) {
         return false;
     }
     console.log("Successfully retrieved poll data.");
+    if (!dataset) {
+        console.log("Dataset indicates error, not rendering.");
+        return;
+    }
     // get the canvas element
     var canvas = element.getElementsByClassName("poll-canvas")[0];
     // create the poll

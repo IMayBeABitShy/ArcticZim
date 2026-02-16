@@ -39,6 +39,10 @@ class Subreddit(Base):
         back_populates="subreddit",
         cascade="all, delete-orphan",
     )
+    wikipages: Mapped[List["WikiPage"]] = relationship(
+        back_populates="subreddit",
+        cascade="all, delete-orphan",
+    )
 
 
 class User(Base):
@@ -205,7 +209,7 @@ class Post(Base):
         @return: True if this post is a poll, False otherwise
         @rtype: L{bool}
         """
-        return (self.poll_data is not None)
+        return (self.poll_data is not None) and (self.poll_data != "false")
 
     @property
     def icon_name(self):
@@ -343,7 +347,7 @@ class Comment(Base):
 
 class MediaFile(Base):
     """
-    This object tracks the status of media files.
+    This model tracks the status of media files.
 
     This class keeps track of both URLs and checksums. The first mediafile
     that downloads a file is considered the primary one.
@@ -370,3 +374,49 @@ class MediaFile(Base):
         back_populates="primary",
         cascade="all,delete-orphan",
     )
+
+
+class WikiPage(Base):
+    """
+    This model represents a subreddit wiki page.
+    """
+    __tablename__ = "wikipage"
+
+    uid: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    subreddit_name: Mapped[str] = mapped_column(ForeignKey("subreddit.name"), index=True)
+    path: Mapped[str] = mapped_column(Unicode(512), deferred=True)
+    content: Mapped[str] = mapped_column(Unicode(20 * 1024), deferred=True)
+    revision_date: Mapped[int]
+    revision_author: Mapped[str] = mapped_column(String(32))
+    revision_reason: Mapped[Optional[str]] = mapped_column(Unicode(256), deferred=True)
+    retrieved_on: Mapped[int]
+
+    subreddit: Mapped["Subreddit"] = relationship(
+        back_populates="wikipages",
+    )
+
+    @property
+    def basepath(self):
+        """
+        Return the part of the path after the subreddit name.
+
+        @return: the final part of the path
+        @rtype: L{str}
+        """
+        path = self.path
+        if path.startswith("/"):
+            path = path[1:]
+        if path.startswith("r/"):
+            return path.split("/", 3)[-1]
+        else:
+            return self.path
+
+    @property
+    def title(self):
+        """
+        Placeholder for the title.
+
+        @return: a title for the page
+        @rtype: L{str}
+        """
+        return self.basepath

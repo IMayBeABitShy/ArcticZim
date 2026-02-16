@@ -1,4 +1,4 @@
-{# This is a base for a subreddit page. Expects "subreddit", and "to_root" argument. #}
+{# This is a base for a subreddit page. Expects "subreddit", "has_wiki", and "to_root" argument. #}
 {% extends "base.html.jinja" %}
 
 {% block title %}
@@ -11,10 +11,13 @@
 
 {% block content %}
     <DIV class="subredditnav">
-        <A href="../top_page_1/">Top</A>
-        <A href="../new_page_1/">New</A>
+        <A href="{{ to_root }}/r/{{ subreddit.name }}/top_page_1/">Top</A>
+        <A href="{{ to_root }}/r/{{ subreddit.name }}/new_page_1/">New</A>
+        {% if has_wiki %}
+        <A href="{{ to_root }}/r/{{ subreddit.name }}/wiki/">Wiki</A>
+        {% endif %}
         {% if options.with_stats %}
-            <A href="../statistics/">Statistics</A>
+            <A href="{{ to_root }}/r/{{ subreddit.name }}/statistics/">Statistics</A>
         {% endif %}
     </DIV>
     {% block subredditcontent %}

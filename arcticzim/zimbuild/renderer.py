@@ -337,6 +337,7 @@ class HtmlRenderer(object):
         # configure filters
         self.environment.filters["render_comment_text"] = self._render_comment_text_filter
         self.environment.filters["render_post_text"] = self._render_comment_text_filter
+        self.environment.filters["render_wiki_text"] = self._render_comment_text_filter
         self.environment.filters["render_license"] = self._render_license_text_filter
         self.environment.filters["format_number"] = format_number
         self.environment.filters["format_size"] = format_size
@@ -346,6 +347,7 @@ class HtmlRenderer(object):
         self.environment.filters["default_index"] = self._default_index
         self.environment.filters["rewrite_url"] = self.filemanager.rewrite_url
         self.environment.filters["load_json"] = json.loads
+        self.environment.filters["first_nonzero"] = self._first_nonzero_filter
         self.environment.filters["debug"] = print
 
         # configure tests
@@ -424,7 +426,10 @@ class HtmlRenderer(object):
             raw_poll_data = json.loads(post.poll_data)
             if not raw_poll_data:
                 # for some reason, post.poll_data can be false
-                poll_data = {}
+                poll_data = False
+            elif ("vote_count" not in raw_poll_data["options"][0]):
+                # if the poll data is for some reason not available, this happens
+                poll_data = False
             else:
                 poll_data = {
                     "labels": [option["text"] for option in raw_poll_data["options"]],
@@ -475,6 +480,7 @@ class HtmlRenderer(object):
                 raise Exception("Invalid subreddit post sort order!")
         else:
             assert num_posts is not None
+        has_wiki = (len(subreddit.wikipages) > 0)
         result = RenderResult()
         items_in_result = 0
         if num_posts == 0:
@@ -509,6 +515,7 @@ class HtmlRenderer(object):
                     num_pages=num_pages,
                     template=list_page_template,
                     sort=sort,
+                    has_wiki=has_wiki,
                     result=result,
                 )
                 if items_in_result >= MAX_ITEMS_PER_RESULT:
@@ -524,6 +531,7 @@ class HtmlRenderer(object):
                 page_index=page_index,
                 num_pages=num_pages,
                 template=list_page_template,
+                has_wiki=has_wiki,
                 sort=sort,
                 result=result,
             )
@@ -533,7 +541,7 @@ class HtmlRenderer(object):
                 items_in_result = 0
         yield result
 
-    def _render_subreddit_postlist_page(self, subreddit, posts, page_index, num_pages, template, sort, result):
+    def _render_subreddit_postlist_page(self, subreddit, posts, page_index, num_pages, template, sort, has_wiki, result):
         """
         Helper function for rendering a list page of posts in a subreddit.
 
@@ -552,6 +560,8 @@ class HtmlRenderer(object):
         @type template: L{jinja2.Template}
         @param sort: sort order this page is for
         @type sort: L{str}
+        @param has_wiki: whether the subreddit has a wiki or not
+        @type has_wiki: L{bool}
         @param result: result the rendered page should be added to
         @type result: L{RenderResult}
         @return: the number of items added to the render result
@@ -563,6 +573,7 @@ class HtmlRenderer(object):
             posts=posts,
             num_pages=num_pages,
             cur_page=page_index,
+            has_wiki=has_wiki,
             sort=sort,
         )
         result.add(
@@ -592,6 +603,7 @@ class HtmlRenderer(object):
             to_root="../../..",
             subreddit=subreddit,
             stats=stats,
+            has_wiki=(len(subreddit.wikipages) > 0),
         )
         result.add(
             HtmlPage(
@@ -600,6 +612,59 @@ class HtmlRenderer(object):
                 title="r/{} - Staticstics".format(subreddit.name),
                 is_front=True,
             ),
+        )
+        return result
+
+    def render_subreddit_wiki(self, subreddit):
+        """
+        Render the statistics page of a subreddit.
+
+        @param subreddit: subreddit to render
+        @type subreddit: L{arcticzim.db.models.Subreddit}
+        @return: the rendered pages and redirects
+        @rtype: L{RenderResult}
+        """
+        result = RenderResult()
+        template = self.environment.get_template("subredditwikipage.html.jinja")
+        for wikipage in subreddit.wikipages:
+            basepath = wikipage.basepath
+            to_root = "../../.." + ("/.." * basepath.count("/"))
+            page = template.render(
+                to_root=to_root,
+                subreddit=subreddit,
+                wikipage=wikipage,
+                has_wiki=True,
+            )
+            result.add(
+                HtmlPage(
+                    path="r/{}/wiki/{}".format(subreddit.name, wikipage.basepath),
+                    content=self.minify_html(page),
+                    title="r/{} - Wiki - {}".format(subreddit.name, wikipage.basepath),
+                    is_front=True,
+                ),
+            )
+        index_template = self.environment.get_template("subredditwikiindexpage.html.jinja")
+        page = index_template.render(
+            to_root=to_root,
+            subreddit=subreddit,
+            has_wiki=True,
+        )
+        result.add(
+            HtmlPage(
+                path="r/{}/wiki/_pageindex".format(subreddit.name),
+                content=self.minify_html(page),
+                title="r/{} - Wiki - Index".format(subreddit.name),
+                is_front=True,
+            ),
+        )
+        # default wiki redirect
+        result.add(
+            Redirect(
+                source="r/{}/wiki/".format(subreddit.name),
+                target="r/{}/wiki/_pageindex".format(subreddit.name),
+                title="r/{} - Wiki".format(subreddit.name),
+                is_front=True,
+            )
         )
         return result
 
@@ -1253,6 +1318,20 @@ class HtmlRenderer(object):
             return value[i]
         except (KeyError, IndexError):
             return default
+
+    def _first_nonzero_filter(self, value):
+        """
+        Returns the first nonzero element in a list or the last one if none of them are nonzero.
+
+        @param value: value to process
+        @type value: L{list}
+        @return: the first nonzero element in the list or the last element
+        @rtype: as value[x]
+        """
+        for v in value:
+            if v:
+                return v
+        return v
 
     # =========== tests ===============
 

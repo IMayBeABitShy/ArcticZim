@@ -1,0 +1,16 @@
+{# This is a page for a subreddit wiki index. Expects "subreddit", "has_wiki" and "to_root" argument. #}
+{% extends "subredditbase.html.jinja" %}
+
+{% block bannertext %}
+    <A href="{{ to_root }}/r/{{ subreddit.name }}/wiki/"><H1 class="bannertext">r/{{ subreddit.name }} - Wiki</H1></A>
+{% endblock %}
+
+{% block title %}
+    <TITLE>r/{{ subreddit.name }} - Wiki - Index</TITLE>
+{% endblock %}
+
+{% block subredditcontent %}
+    {% with subreddit=subreddit, to_root=to_root %}
+        {% include "subredditwikiindex.html.jinja" %}
+    {% endwith %}
+{% endblock %}

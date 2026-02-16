@@ -1,23 +1,27 @@
 {# This is the template for a poll. Expects "poll_data", "post" and "to_root" as arguments. #}
 
 <DIV class="poll" data-polllocation="{{ to_root }}/r/{{ post.subreddit.name }}/{{ post.id }}/poll.json">
-    <DIV class="poll-chart">
-        <CANVAS class="poll-canvas"></CANVAS>
-    </DIV>
-    <DIV class="poll-text">
-        <TABLE>
-        <TR>
-            <TH>Option</TH>
-            <TH>Votes</TH>
-            <TH>Percent</TH>
-        </TR>
-        {% for poll_option in poll_data["options"] %}
+    {% if (not poll_data) or ("vote_count" not in poll_data["options"][0]) %}
+        <P class="errormsg">Error: invalid poll data.</P>
+    {% else %}
+        <DIV class="poll-chart">
+            <CANVAS class="poll-canvas"></CANVAS>
+        </DIV>
+        <DIV class="poll-text">
+            <TABLE>
             <TR>
-                <TD>{{ poll_option["text"] }}</TD>
-                <TD>{{ poll_option["vote_count"] }}</TD>
-                <TD>{{ ((poll_option["vote_count"] / poll_data["total_vote_count"] * 100))|round(precision=2) }}%</TD>
+                <TH>Option</TH>
+                <TH>Votes</TH>
+                <TH>Percent</TH>
             </TR>
-        {% endfor %}
-        </TABLE>
-    </DIV>
+            {% for poll_option in poll_data["options"] %}
+                <TR>
+                    <TD>{{ poll_option["text"] }}</TD>
+                    <TD>{{ poll_option["vote_count"] }}</TD>
+                    <TD>{{ ((poll_option["vote_count"] / poll_data["total_vote_count"] * 100))|round(precision=2) }}%</TD>
+                </TR>
+            {% endfor %}
+            </TABLE>
+        </DIV>
+    {% endif %}
 </DIV>

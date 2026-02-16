@@ -1,0 +1,12 @@
+{# This is a page for a subreddit wiki page. Expects "subreddit", "wikipage", "has_wiki" and "to_root" argument. #}
+{% extends "subredditbase.html.jinja" %}
+
+{% block title %}
+    <TITLE>r/{{ subreddit.name }} - Wiki - {{ wikipage.title }}</TITLE>
+{% endblock %}
+
+{% block subredditcontent %}
+    {% with wikipage=wikipage, to_root=to_root %}
+        {% include "subredditwiki.html.jinja" %}
+    {% endwith %}
+{% endblock %}

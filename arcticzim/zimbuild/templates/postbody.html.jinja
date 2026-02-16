@@ -4,11 +4,11 @@
     {% block postbody %}
         {% if post.post_hint == "image" %}
             <img class="postimage" src="{{ post.url|rewrite_url(to_root) }}"></image>
-        {% elif post.is_gallery %}
+        {% elif post.is_gallery and (post.media_metadata not in ("null", "false"))%}
             {% with gallery_data=post.media_metadata|load_json, to_root=to_root %}
                 {% include "gallery.html.jinja" %}
             {% endwith %}
-        {% elif post.is_poll %}
+        {% elif post.is_poll%}
             {% with poll_data=post.poll_data|load_json, post=post, to_root=to_root %}
                 {% include "poll.html.jinja" %}
             {% endwith %}
