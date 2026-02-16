@@ -18,6 +18,7 @@ This project is still a work-in-progress.
    - preview feature has already been implemented
  - user pages
  - subreddit wikis
+ - subreddit rules
  - statistics (global, subreddit, user)
 
 **Missing/planned features:**

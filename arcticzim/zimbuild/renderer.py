@@ -645,7 +645,7 @@ class HtmlRenderer(object):
             )
         index_template = self.environment.get_template("subredditwikiindexpage.html.jinja")
         page = index_template.render(
-            to_root=to_root,
+            to_root="../../..",
             subreddit=subreddit,
             has_wiki=True,
         )
@@ -665,6 +665,32 @@ class HtmlRenderer(object):
                 title="r/{} - Wiki".format(subreddit.name),
                 is_front=True,
             )
+        )
+        return result
+
+    def render_subreddit_rules(self, subreddit):
+        """
+        Render the rules page of a subreddit.
+
+        @param subreddit: subreddit to render
+        @type subreddit: L{arcticzim.db.models.Subreddit}
+        @return: the rendered pages and redirects
+        @rtype: L{RenderResult}
+        """
+        result = RenderResult()
+        template = self.environment.get_template("subredditrulespage.html.jinja")
+        page = template.render(
+            to_root="../../..",
+            subreddit=subreddit,
+            has_wiki=(len(subreddit.wikipages) > 0),
+        )
+        result.add(
+            HtmlPage(
+                path="r/{}/rules/".format(subreddit.name),
+                content=self.minify_html(page),
+                title="r/{} - Rules".format(subreddit.name),
+                is_front=True,
+            ),
         )
         return result
 

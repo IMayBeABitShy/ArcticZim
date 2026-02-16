@@ -43,8 +43,17 @@ This file describes the ZIM layout.
 |   +---SORT_page_PAGE/
 |   |   A page of all posts in this subreddit in the specified order
 |   |
+|   +-+-wiki/
+|   | | The wiki of the subreddit
+|   | |
+|   | +---PATH
+|   |     A specific page in the subreddit wiki
+|   |
 |   +---statistics/
-|       Subreddit statistics
+|   |   Subreddit statistics
+|   |
+|   +--rules/
+|       Subreddit rules
 |
 +-+-u/
 | | Users

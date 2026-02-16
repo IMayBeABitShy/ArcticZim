@@ -370,15 +370,26 @@ A {
 }
 
 
-/* wiki */
+/* wiki and rules */
 
-.wikipage, .wikiindex {
+.wikipage, .wikiindex, .subredditrules {
   margin-left: 4em;
   margin-right: 4em;
 }
 
 .wikipage-footer {
   border-top: 1px dotted black;
+}
+
+.rule {
+  border: 1px solid $feature_color;
+  padding-left: 2em;
+  padding-right: 2em;
+}
+
+.rulemeta, .ruleviolationtext {
+  font-size: 80%;
+  color: scale-color($light_text_color, $lightness: 10%);
 }
 
 

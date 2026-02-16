@@ -33,7 +33,7 @@ from .renderer import HtmlRenderer, RenderResult, SubredditInfo, SUBREDDITS_ON_I
 from .statistics import query_post_stats
 from ..util import ensure_iterable
 from ..downloader import MediaFileManager
-from ..db.models import Post, User, Comment, Subreddit, WikiPage
+from ..db.models import Post, User, Comment, Subreddit, WikiPage, SubredditRule
 
 
 MARKER_WORKER_STOPPED = "stopped"
@@ -494,6 +494,8 @@ class Worker(object):
             self.process_subreddit_stats_task(task)
         elif task.subtask == "wiki":
             self.process_subreddit_wiki_task(task)
+        elif task.subtask == "rules":
+            self.process_subreddit_rules_task(task)
         else:
             self.process_subreddit_sort_task(task)
 
@@ -624,8 +626,61 @@ class Worker(object):
             self.log("Done.")
             return
 
+        if not subreddit.wikipages:
+            self.log("-> Subreddit has no wiki!")
+            self.log("Submitting empty result...")
+            result = RenderResult()
+            self.handle_result(result)
+            self.log("Done.")
+            return
+
         self.log("Rendering subreddit wiki...")
         result = self.renderer.render_subreddit_wiki(
+            subreddit=subreddit,
+        )
+        self.log("Submitting result...")
+        self.handle_result(result)
+        self.log("Done.")
+
+    def process_subreddit_rules_task(self, task):
+        """
+        Process a received subreddit rules task.
+
+        Note: this is called from L{Worker.process_subreddit_task}.
+
+        @param task: task to process
+        @type task: L{SubredditRenderTask}
+        """
+        # load subreddit
+        self.log("Loading subreddit...")
+        subreddit_stmt = (
+            select(Subreddit)
+            .where(
+                Subreddit.name == task.subreddit_name,
+            )
+            .options(
+                raiseload(Subreddit.posts),
+                raiseload(Subreddit.comments),
+                selectinload(Subreddit.wikipages),
+                selectinload(Subreddit.rules),
+                undefer(Subreddit.rules, SubredditRule.short_name),
+                undefer(Subreddit.rules, SubredditRule.description),
+                undefer(Subreddit.rules, SubredditRule.violation_reason),
+            )
+        )
+        subreddit = self.session.scalars(subreddit_stmt).first()
+        self.session.expunge(subreddit)  # prevent subreddit from being modified and storing objects
+        self.log("Subreddit loaded.")
+        if subreddit is None:
+            self.log("-> Subreddit not found!")
+            self.log("Submitting empty result...")
+            result = RenderResult()
+            self.handle_result(result)
+            self.log("Done.")
+            return
+
+        self.log("Rendering subreddit rules...")
+        result = self.renderer.render_subreddit_rules(
             subreddit=subreddit,
         )
         self.log("Submitting result...")

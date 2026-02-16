@@ -43,6 +43,10 @@ class Subreddit(Base):
         back_populates="subreddit",
         cascade="all, delete-orphan",
     )
+    rules: Mapped[List["SubredditRule"]] = relationship(
+        back_populates="subreddit",
+        cascade="all, delete-orphan",
+    )
 
 
 class User(Base):
@@ -420,3 +424,23 @@ class WikiPage(Base):
         @rtype: L{str}
         """
         return self.basepath
+
+
+class SubredditRule(Base):
+    """
+    This class represents a subreddit rule.
+    """
+    __tablename__ = "subredditrule"
+
+    uid: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    subreddit_name: Mapped[str] = mapped_column(ForeignKey("subreddit.name"))
+    kind: Mapped[str] = mapped_column(String(16))
+    priority: Mapped[int]
+    short_name: Mapped[str] = mapped_column(Unicode(256), deferred=True)
+    created_utc: Mapped[int]
+    description: Mapped[str] = mapped_column(Unicode(1024), deferred=True)
+    violation_reason: Mapped[str] = mapped_column(Unicode(512), deferred=True)
+
+    subreddit: Mapped["Subreddit"] = relationship(
+        back_populates="rules",
+    )

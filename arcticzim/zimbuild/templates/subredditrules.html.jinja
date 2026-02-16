@@ -1,0 +1,16 @@
+{# This is a list of rules. Expects "rules" and "to_root" argument. #}
+
+<DIV class="rulelist">
+    {% if rules|length > 0 %}
+        {% for rule in rules|sort(attribute="priority") %}
+            <DIV class="rule">
+                <H3 class="ruletitle">{{ rule.short_name }}</H3>
+                <P class="rulemeta"><B>Created:</B> {{ rule.created_utc|format_timestamp }} <B>Applies to: </B> {{ rule.kind }}</P>
+                <P class="ruletext">{{ rule.description }}</P>
+                <P class="ruleviolationtext"><B>Violation reason:</B> {{ rule.violation_reason }}</P>
+            </DIV>
+        {% endfor %}
+    {% else %}
+        <P>This subreddit either has no rules or they are not available.</P>
+    {% endif %}
+</DIV>

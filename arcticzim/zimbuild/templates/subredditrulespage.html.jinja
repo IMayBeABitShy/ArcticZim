@@ -1,0 +1,15 @@
+{# This is a rules page for a subreddit. Expects "subreddit", "has_wiki" and "to_root" argument. #}
+{% extends "subredditbase.html.jinja" %}
+
+{% block title %}
+    <TITLE>r/{{ subreddit.name }} - Rules</TITLE>
+{% endblock %}
+
+{% block subredditcontent %}
+    <DIV class="subredditrules">
+        <H2>Rules</H2>
+        {% with rules=subreddit.rules, to_root=to_root %}
+            {% include "subredditrules.html.jinja" %}
+        {% endwith %}
+    </DIV>
+{% endblock %}
