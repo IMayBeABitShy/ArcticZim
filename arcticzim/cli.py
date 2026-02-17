@@ -129,6 +129,7 @@ def run_media_download(ns):
             enable_post_processing=ns.post_processing,
             download_reddit_videos=ns.download_reddit_videos,
             download_external_videos=ns.download_external_videos,
+            max_image_dimension=ns.max_image_dimension,
             include_comments=ns.include_comments,
         )
 
@@ -237,6 +238,14 @@ def main():
         action="store_true",
         dest="download_external_videos",
         help="download videos NOT hosted on reddit",
+    )
+    mediadownload_parser.add_argument(
+        "--max-image-dimension",
+        action="store",
+        type=int,
+        dest="max_image_dimension",
+        default=512,
+        help="Downscale images to this many pixels on their longer side",
     )
     mediadownload_parser.add_argument(
         "--search-comments",

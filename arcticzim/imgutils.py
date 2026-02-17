@@ -57,7 +57,7 @@ def minimize_image(path, max_w=512, max_h=512):
         # resize
         w_ratio = (max_w / img.width)
         h_ratio = (max_h / img.height)
-        ratio = min(w_ratio, h_ratio)
+        ratio = min(w_ratio, h_ratio, 1)
         new_w = math.floor(img.width * ratio)
         new_h = math.floor(img.height * ratio)
         new_img = img.resize((new_w, new_h))

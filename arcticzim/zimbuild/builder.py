@@ -41,7 +41,7 @@ except ImportError:
     setproctitle = None
 
 from ..util import get_package_dir, get_resource_file_path, set_or_increment
-from ..util import format_timedelta, format_size, format_number
+from ..util import format_timedelta, format_size, format_number, trim_title
 from ..downloader import hash_url
 from ..imgutils import mimetype_is_image, mimetype_is_video
 from ..db.models import Post, Subreddit, User, MediaFile, ARCTICZIM_USERNAME
@@ -172,7 +172,7 @@ class HtmlPageItem(Item):
         return self._path
 
     def get_title(self):
-        return self._title
+        return trim_title(self._title)
 
     def get_mimetype(self):
         return "text/html"

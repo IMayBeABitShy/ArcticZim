@@ -304,6 +304,39 @@ def parse_reddit_url(url):
         return None
 
 
+def trim_title(s):
+    """
+    Trim a title, making it more suitable for inclusion in a ZIM file.
+
+    @param s: title to trim
+    @type s: L{str}
+    @return: the trimemd title
+    @rtype: L{str}
+    """
+    words = s.split(" ")
+    words = [trim_word(word) for word in words]
+    title = " ".join(words)
+    if len(title) > 230:
+      title = title[:230]
+    return title
+
+
+def trim_word(word):
+    """
+    Trim a word, making it more suitable in titles.
+
+    @param word: word to trim
+    @type word: L{str}
+    @return: the trimmed word
+    @rtype: L{str}
+    """
+    max_word_length = 100
+    if len(word) >= max_word_length:
+        word = word[:max_word_length]
+    word = word.strip()
+    return word
+
+
 if __name__ == "__main__":
     # test code
     val = int(input("n: "))

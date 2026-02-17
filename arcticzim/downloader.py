@@ -94,7 +94,7 @@ def has_downloaded(session, url, any_status=True):
     return (mf is not None)
 
 
-def download(session, url, mediadir, enable_post_processing=True, download_videos=True):
+def download(session, url, mediadir, enable_post_processing=True, download_videos=True, max_image_dimension=512):
     """
     Download the media at the specified URL.
 
@@ -108,6 +108,8 @@ def download(session, url, mediadir, enable_post_processing=True, download_video
     @type enable_post_processing: L{bool}
     @param download_videos: whether videos should be downloaded
     @type download_videos: L{bool}
+    @param max_image_dimension: how many pixels the wider side of an image may have at most
+    @type max_image_dimension: L{int}
     """
     url_hash = hash_url(url)
     outpath = os.path.join(mediadir, url_hash)
@@ -134,8 +136,8 @@ def download(session, url, mediadir, enable_post_processing=True, download_video
             headers = {
                 "user-agent": "Mozilla/5.0 (X11; Linux x86_64; rv:140.0) Gecko/20100101 Firefox/140.0",
             }
-            r = requests.get(url, headers=headers, stream=True)
             try:
+                r = requests.get(url, headers=headers, stream=True)
                 r.raise_for_status()
             except Exception as e:
                 raise DownloadFailed() from e
@@ -190,7 +192,7 @@ def download(session, url, mediadir, enable_post_processing=True, download_video
             size=size,
         )
         if enable_post_processing:
-            post_process(mediadir, mf)
+            post_process(mediadir, mf, max_image_dimension=max_image_dimension)
         session.add(mf)
         session.commit()
 
@@ -279,7 +281,7 @@ def do_redvid_download(url, mediadir, outpath):
     return mimetype
 
 
-def post_process(mediadir, mediafile):
+def post_process(mediadir, mediafile, max_image_dimension=512):
     """
     Post process an image file.
 
@@ -289,10 +291,16 @@ def post_process(mediadir, mediafile):
     @type mediadir: L{str}
     @param mediafile: the mediafile object
     @type mediafile: L{arcticzim.db.models.MediaFile}
+    @param max_image_dimension: how many pixels the wider side of an image may have at most
+    @type max_image_dimension: L{int}
     """
     path = os.path.join(mediadir, hash_url(mediafile.url))
     if mimetype_is_image(mediafile.mimetype):
-        mimetype, size = minimize_image(path)
+        mimetype, size = minimize_image(
+            path,
+            max_w=max_image_dimension,
+            max_h=max_image_dimension,
+        )
         mediafile.size = size
         mediafile.mimetype = mimetype
 
@@ -380,6 +388,7 @@ def download_all(
     download_reddit_videos=True,
     download_external_videos=False,
     include_comments=False,
+    max_image_dimension=512,
 ):
     """
     Download all files of posts.
@@ -398,6 +407,8 @@ def download_all(
     @type enable_post_processing: L{bool}
     @param include_comments: if nonzero, download media in comments too
     @type include_comments: L{bool}
+    @param max_image_dimension: how many pixels the wider side of an image may have at most
+    @type max_image_dimension: L{int}
     """
     n = session.execute(select(func.count(Post.uid))).one()[0]
     stmt = select(Post).options(
@@ -425,6 +436,7 @@ def download_all(
                 mediadir=mediadir,
                 enable_post_processing=enable_post_processing,
                 download_videos=(download_external_videos or download_reddit_videos),
+                max_image_dimension=max_image_dimension,
             )
             time.sleep(sleep)
 
