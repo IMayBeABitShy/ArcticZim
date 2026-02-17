@@ -14,7 +14,7 @@
     {% endblock %}
 </DIV>
 <DIV class="comments">
-    {% with to_root=to_root, comments=post.root_comment.children|sort(attribute="score", reverse=True), layer=0 %}
+    {% with to_root=to_root, comments=post.root_comment.children|sort(attribute="score", reverse=True)|stickysort, layer=0 %}
         {% include "commentlist.html.jinja" %}
     {% endwith %}
 </DIV>

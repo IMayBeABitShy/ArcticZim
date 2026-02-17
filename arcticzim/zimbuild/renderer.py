@@ -380,6 +380,7 @@ class HtmlRenderer(object):
         self.environment.filters["rewrite_url"] = self._rewrite_url_filter
         self.environment.filters["load_json"] = json.loads
         self.environment.filters["first_nonzero"] = self._first_nonzero_filter
+        self.environment.filters["stickysort"] = self._stickysort_filter
         self.environment.filters["render_postsummary_by_url"] = self._render_postsummary_by_url
         self.environment.filters["debug"] = print
 
@@ -1430,6 +1431,17 @@ class HtmlRenderer(object):
             if v:
                 return v
         return v
+
+    def _stickysort_filter(self, comments):
+        """
+        Sort a list of comments such that stickied comments come first.
+
+        @param comments: comments to sort
+        @type comments: L{list} of L{arcticzim.db.models.Comment}
+        @return: the sorted comments
+        @type comments: L{list} of L{arcticzim.db.models.Comment}
+        """
+        return sorted(comments, reverse=True, key=lambda x: (x is True))
 
     def _render_postsummary_by_url(self, url, to_root):
         """
