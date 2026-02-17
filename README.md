@@ -47,6 +47,15 @@ The core of this project is mostly done, but there are still many rough edges th
 
 ## Usage
 
+### Before we begin
+
+Please note that this tool is aimed at users using a linux system and having experience with the command line. Most commands below should work as-is (provided you fill in the values correctly), but you may need additional dependencies, e.g. for processing webp images.
+
+**A note on system requirements:** please note that using ArcticZim to render large subreddits may both take a long time and a lot of resources, especially memory. The amount of memory required rises with the amount of entries in the ZIM, which in turn depends on the number of posts. You can significantly reduce these requirements by excluding users in the final ZIM file. All of these commands support `--help`, so use that to find the options that fit your use case.
+
+**A note on fairness:** This project is not related to Arctic Shift in any way. Arctic Shift provides the reddit data and the endpoints for this. The resources of that project are limited, so please be mindful of making to many requests using this tool. The [Arctic Shift documentation](https://github.com/ArthurHeitmann/arctic_shift) may provide some more details and a way to contact the user running that service.
+
+
 ### Step 1: Installation
 
 We obviously need to install ArcticZim first.

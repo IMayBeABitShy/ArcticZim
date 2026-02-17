@@ -48,7 +48,14 @@ def unify_url(url):
     _query = urlencode(
         list(sorted(frozenset(parse_qsl(parts.query)))),
     )
-    _path = unquote_plus(parts.path)
+    _path = parts.path
+    while True:
+        # using a loop here as a URL may be urlencoded multiple times
+        # and we need the output here to be stable
+        unquoted = unquote_plus(_path)
+        if unquoted == _path:
+            break
+        _path = unquoted
     parts = parts._replace(
         query=_query,
         path=_path,
