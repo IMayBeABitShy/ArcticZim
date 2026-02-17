@@ -202,18 +202,18 @@ def ensure_iterable(obj):
         return (obj, )
 
 
-def remove_duplicates(l):
+def remove_duplicates(li):
     """
     Copy a list such that the order of elements is preserved but only
     the first occurrence of each element preserved.
 
-    @param l: list to sort
-    @type l: L{list}
+    @param li: list to sort
+    @type li: L{list}
     @return: a copy of the list with some elements potentially removed
     @rtype: L{list}
     """
     ret = []
-    for e in l:
+    for e in li:
         if e not in ret:
             ret.append(e)
     return ret
@@ -302,7 +302,6 @@ def parse_reddit_url(url):
     else:
         # unknown reddit reference
         return None
-
 
 
 if __name__ == "__main__":

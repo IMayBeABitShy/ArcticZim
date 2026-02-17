@@ -305,7 +305,7 @@ class HtmlRenderer(object):
     The HTML renderer renders HTML pages for various objects.
 
     @cvar MISTUNE_PLUGINS: list of plugins to use for mistune
-    @cvar: L{list} of L{str}
+    @type MISTUNE_PLUGINS: L{list} of L{str}
 
     @ivar worker: worker this renderer is for
     @type worker: L{arcticzim.zimbuild.worker.Worker}
@@ -341,7 +341,7 @@ class HtmlRenderer(object):
         @type options: L{RenderOptions}
         @param filemanager: the media file manager
         @type filemanager: L{arcticzim.downloader.MediaFileManager}
-        @param reference_rewrite: the URL rewriter for reddit references
+        @param reference_rewriter: the URL rewriter for reddit references
         @type reference_rewriter: L{arcticzim.fetcher.ReferenceUrlRewriter}
         """
         assert isinstance(options, RenderOptions)
@@ -748,7 +748,6 @@ class HtmlRenderer(object):
             ),
         )
         return result
-
 
     def render_user_posts(self, user, sort="top", posts=None, num_posts=None):
         """
@@ -1490,4 +1489,3 @@ class HtmlRenderer(object):
         if parsed["type"] != "post":
             return False
         return self.reference_rewriter.should_rewrite(parsed)
-

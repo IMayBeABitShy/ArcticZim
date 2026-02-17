@@ -193,7 +193,11 @@ def fetch_post(session, postid, sleep=1):
     if timestamp > 0:
         timestamp - 100  # just to be sure we fetch all data
     raw_comments = []
-    with tqdm.tqdm(desc="Fetching comments for {}".format(postid), total=end-start, unit="seconds") as bar:
+    with tqdm.tqdm(
+        desc="Fetching comments for {}".format(postid),
+        total=(end - start),
+        unit="seconds",
+    ) as bar:
         while True:
             time.sleep(sleep)
             comment_url = "https://arctic-shift.photon-reddit.com/api/comments/search?link_id={}&sort=asc&after={}&limit=auto".format(
@@ -217,7 +221,6 @@ def fetch_post(session, postid, sleep=1):
             bar.n = int(timestamp - start)
         bar.n = int(end - start)
         import_comments(session, raw_comments)
-
 
 
 def get_wikipages_for_subreddit(subreddit_name):
@@ -286,6 +289,7 @@ def fetch_all_wikis(session, sleep=1):
         if fetch_wiki_for_subreddit(session, subreddit.name):
             did_fetch_something_new = True
         time.sleep(sleep)
+    return did_fetch_something_new
 
 
 def get_rules_for_subreddit(subreddit_name):
@@ -446,7 +450,6 @@ class ReferenceUrlRewriter(object):
         """
         urls = get_urls_from_string(text)
         for url in urls:
-            reference = parse_reddit_url(url)
             new_url = self.rewrite_url(url, to_root=to_root)
             if new_url != url:
                 text = text.replace(url, new_url)

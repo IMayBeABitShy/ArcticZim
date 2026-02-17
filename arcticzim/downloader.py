@@ -20,7 +20,6 @@ from .imgutils import minimize_image, mimetype_is_image, mimetype_is_video
 from .util import get_urls_from_string
 
 
-
 class DownloadFailed(Exception):
     """
     Exception raised when a download failed.
@@ -270,7 +269,6 @@ def do_redvid_download(url, mediadir, outpath):
     @return: the mimetype of the downloaded video
     @rtype: L{str}
     """
-    hashed_url = hash_url(url)
     downloader = RedvidDL(url=url, path=mediadir, min_q=True)
     try:
         path = downloader.download()
@@ -393,9 +391,9 @@ def download_all(
     @param sleep: sleep time between downloads in seconds
     @type sleep: L{int} or L{float}
     @param download_reddit_videos: whether reddit videos should be downloaded
-    @type include_reddit_videos: L{bool}
+    @type download_reddit_videos: L{bool}
     @param download_external_videos: whether non-reddit videos should be downloaded
-    @type include_external_videos: L{bool}
+    @type download_external_videos: L{bool}
     @param enable_post_processing: whether post-processing should be applied
     @type enable_post_processing: L{bool}
     @param include_comments: if nonzero, download media in comments too

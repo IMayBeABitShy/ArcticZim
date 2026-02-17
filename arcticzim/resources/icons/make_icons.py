@@ -23,7 +23,7 @@ for icon in ICONS:
     draw = ImageDraw.Draw(img)
     draw.rounded_rectangle(
         xy=((0, 0), ICON_SIZE),
-        radius=(ICON_SIZE[0]//6),
+        radius=(ICON_SIZE[0] // 6),
         fill=ICON_COLOR,
     )
     if icon[1] is not None:
@@ -39,7 +39,7 @@ for icon in ICONS:
     if icon[2] is not None:
         font = ImageFont.truetype("LiberationSerif-Bold.ttf", FONT_SIZE)
         draw.text(
-            xy=(ICON_SIZE[0]//2, ICON_SIZE[1]//2),
+            xy=(ICON_SIZE[0] // 2, ICON_SIZE[1] // 2),
             text=icon[2],
             fill=(255, 255, 255, 255),
             anchor="mm",

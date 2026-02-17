@@ -22,7 +22,7 @@ import time
 
 from sqlalchemy import select, func, desc
 from sqlalchemy.orm import Session, undefer
-from sqlalchemy.orm import joinedload, subqueryload, selectinload, noload, raiseload
+from sqlalchemy.orm import joinedload, selectinload, noload, raiseload
 
 try:
     import memray
@@ -106,6 +106,7 @@ class PostRenderTask(Task):
             self.post_uids[0],
             len(self.post_uids) - 1,
         )
+
 
 class SubredditRenderTask(Task):
     """
@@ -495,8 +496,8 @@ class Worker(object):
         This is a helper function for rendering crossposts. It is called
         by the renderer to load the post and will call the renderer again.
 
-        @param task: task to process
-        @type task: L{PostRenderTask}
+        @param post_id: id of post to process
+        @type post_id: L{str}
         @param to_root: rootification prefix (see templates)
         @type to_root: L{str}
         @return: the rendered html

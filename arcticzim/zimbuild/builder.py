@@ -486,7 +486,7 @@ class BuildOptions(object):
 
         # debug options
         skip_posts=False,
-        ):
+    ):
         """
         The default constructor.
 
@@ -526,7 +526,7 @@ class BuildOptions(object):
         @type with_users: L{bool}
         @param with_media: if nonzero, include media files
         @type with_media: L{str}
-        @params with_videos: if nonzero, include video files
+        @param with_videos: if nonzero, include video files
         @type with_videos: L{str}
         """
         self.name = name
@@ -887,10 +887,10 @@ class ZimBuilder(object):
         # open the ZIM creator
         self.log("Opening ZIM creator, writing to path '{}'... ".format(outpath), end="")
         with Creator(outpath) \
-         .config_indexing(options.indexing, options.language) \
-         .config_clustersize(clustersize) \
-         .config_verbose(verbose) \
-         .config_nbworkers(n_creator_workers) as creator:
+                .config_indexing(options.indexing, options.language) \
+                .config_clustersize(clustersize) \
+                .config_verbose(verbose) \
+                .config_nbworkers(n_creator_workers) as creator:
             self.log("Done.")
 
             # configurations
@@ -951,7 +951,6 @@ class ZimBuilder(object):
         total_amount = self.num_files_added["total"]
         self.log("    total: {} ({})".format(total_amount, format_number(total_amount)))
 
-
     def _add_content(self, creator, session, options):
         """
         Add the content of the ZIM file.
@@ -993,8 +992,8 @@ class ZimBuilder(object):
             creator=creator,
             options=options,
             task_name="Adding subreddits",
-            n_tasks=n_subreddits*n_tasks_per_subreddit,
-            task_multiplier=(1/n_tasks_per_subreddit),
+            n_tasks=n_subreddits * n_tasks_per_subreddit,
+            task_multiplier=(1 / n_tasks_per_subreddit),
             task_unit="subreddits",
         ):
             self._send_subreddit_tasks(session, with_stats=options.with_stats)
@@ -1014,8 +1013,8 @@ class ZimBuilder(object):
                 creator=creator,
                 options=options,
                 task_name="Adding users",
-                n_tasks=n_users*n_tasks_per_user,  # x tasks per user
-                task_multiplier=(1/n_tasks_per_user),
+                n_tasks=n_users * n_tasks_per_user,  # x tasks per user
+                task_multiplier=(1 / n_tasks_per_user),
                 task_unit="users",
             ):
                 self._send_user_tasks(session, with_stats=options.with_stats)
@@ -1143,7 +1142,7 @@ class ZimBuilder(object):
         n_tasks,
         task_unit,
         task_multiplier=1,
-        ):
+    ):
         """
         This method will be executed as the creator thread.
 
@@ -1174,7 +1173,7 @@ class ZimBuilder(object):
         n_items_added = 0
         with tqdm.tqdm(
             desc=task_name,
-            total=n_tasks*task_multiplier,
+            total=n_tasks * task_multiplier,
             unit=task_unit,
             # custom bar format to deal with floats
             # bar_format="{l_bar}{bar}| {n_fmt:.2f}/{total_fmt:.2f} [{elapsed:}<{remaining:.}, {rate_fmt}{postfix}]",

@@ -2,31 +2,48 @@
 
 ArcticZim is a tool for converting data from [Arctic Shift](https://github.com/ArthurHeitmann/arctic_shift) into ZIM files. Arctic Shift provides reddit data. ZIM files are, to put it very simple, highly compressed offline versions of websites. Thus, this is a tool for generating human-browsable offline copies of reddit.
 
+As a side effect, ArcticZim is capable of generating ZIM files of deleted/banned/... subreddits, provided the data is still available on Arctic Shift.
+
 ## Project Status
 
-This project is still a work-in-progress.
+The core of this project is mostly done, but there are still many rough edges that could use some refinement. Those are mostly quality-of-life related or some minor edge cases.
 
 **Supported features:**
 
- - text-posts are implemented
- - media posts (both images, galleries and videos) are implemented and optional
- - polls are implemented
- - crosspost support
+ - Most types of posts are implemented and working:
+    - text-posts
+    - media posts (both images, galleries and videos) are implemented and optional
+    - polls are implemented
+    - crosspost support
  - comment trees rendered
    - can be collapsed
+   - optionally, referenced media in comments can also be included
  - subreddit pages are implemented
    - lists of posts are shown in both top and newest order
-   - preview feature has already been implemented
+   - A preview of posts is available
+ - additional subreddit features have been implemented
+   - subreddit wikis
+   - subreddit rules
+   - statistics
  - user pages
- - subreddit wikis
- - subreddit rules
- - statistics (global, subreddit, user)
+   - overview of posts and comments included in the ZIM
+   - statistics
+   - can be disabled
+- a basic darkmode is available
+- using `yt-dlp`, external videos can also be downloaded
+   - reddit videos can be automatically downloaded using `redvid`
+   - note that currently videos will always be downloaded using the lowest quality
 
 **Missing/planned features:**
 
  - various style/layout improvements, especially for mobile
- - comment media
+ - quality control for media
  - selective generation of ZIM files
+ - mobile layout
+
+**Missing and unlikely to ever be implemented features:**
+
+ - subreddit styles
 
 ## Usage
 
@@ -82,6 +99,8 @@ Simply run `arcticzim download-media --download-reddit-videos --download-externa
 
 Note that `ffmpeg` may be required to download videos. If you don't want to download videos, you can simply skip those options.
 
+You can also search comments for media by adding the `--search-comments` argument. **Tip:**  you can choose to run this command twice, first without `--search-comments` and the second time with that argument, choosing different values for `--download-external-videos` and similar arguments.
+
 ### Step 7: Build the ZIM file.
 
 It's time to build the ZIM file. Now, before we get started, here are some important notes:
@@ -94,7 +113,7 @@ The build command is `arcticzim build`. Some arguments are needed and many more 
 
 An example command would be: `arcticzim -v build --lazy "sqlite:///db.sqlite" example.zim`.
 
-Congratulations, you've finished.
+Congratulations, you've finished building a ZIM.
 
 ## Contributing
 

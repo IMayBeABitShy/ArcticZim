@@ -13,7 +13,6 @@ except Exception:
     # multiprocessing may not be available
     multiprocessing = None
 
-from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from .db.models import Base

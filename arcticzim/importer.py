@@ -12,7 +12,6 @@ Import logic.
 """
 import json
 import datetime
-import time
 
 from sqlalchemy import select
 
@@ -237,7 +236,6 @@ def import_comments(session, comments):
         parents[comment.name] = comment
     session.commit()
     return n_fails
-
 
 
 def import_comments_from_file(session, path, batch_size=1000):
