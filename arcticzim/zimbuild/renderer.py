@@ -28,6 +28,7 @@ except ImportError:
 from ..util import format_size, format_number, get_resource_file_path, parse_reddit_url
 from ..downloader import MediaFileManager
 from .buckets import BucketMaker
+from .custommistune import CustomMistuneBlockLevelParser, relative_url_plugin
 
 
 POSTS_PER_PAGE = 20
@@ -303,6 +304,9 @@ class HtmlRenderer(object):
     """
     The HTML renderer renders HTML pages for various objects.
 
+    @cvar MISTUNE_PLUGINS: list of plugins to use for mistune
+    @cvar: L{list} of L{str}
+
     @ivar worker: worker this renderer is for
     @type worker: L{arcticzim.zimbuild.worker.Worker}
     @ivar environment: the jinja2 environment used to render templates
@@ -313,7 +317,20 @@ class HtmlRenderer(object):
     @type filemanager: L{arcticzim.downloader.MediaFileManager}
     @ivar reference_rewrite: the URL rewriter for reddit references
     @type reference_rewriter: L{arcticzim.fetcher.ReferenceUrlRewriter}
+    @ivar markdown: mistune markdown renderer
+    @type markdown: L{mistune.markdown.Markdown}
     """
+
+    MISTUNE_PLUGINS = [
+        "strikethrough",
+        "footnotes",
+        "table",
+        "url",
+        "superscript",
+        "subscript",
+        "spoiler",
+    ]
+
     def __init__(self, worker, options, filemanager, reference_rewriter):
         """
         The default constructor.
@@ -333,6 +350,11 @@ class HtmlRenderer(object):
         self.options = options
         self.filemanager = filemanager
         self.reference_rewriter = reference_rewriter
+
+        # setup mistune (markdown renderer)
+        self.markdown = mistune.create_markdown(plugins=self.MISTUNE_PLUGINS)
+        self.markdown.block = CustomMistuneBlockLevelParser()
+        relative_url_plugin(self.markdown)
 
         # setup jinja environment
         self.environment = Environment(
@@ -1316,7 +1338,7 @@ class HtmlRenderer(object):
             rewritten,
             to_root=to_root,
         )
-        rendered = mistune.html(
+        rendered = self.markdown(
             rewritten,
         )
         return rendered

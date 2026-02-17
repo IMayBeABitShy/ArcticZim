@@ -286,19 +286,19 @@ def parse_reddit_url(url):
     if segments[0] in ("u", "user"):
         # a user reference
         username = segments[1]
-        return {"type": "user", "username": username}
+        return {"scheme": parts.scheme, "type": "user", "username": username}
     elif segments[0] == "r":
         # a subreddit, post or comment reference
         subredditname = segments[1]
         if (len(segments) >= 6) and (segments[2] == "comments"):
             # a comment reference
-            return {"type": "comment", "subreddit": subredditname, "post": segments[3], "comment": segments[5]}
+            return {"scheme": parts.scheme, "type": "comment", "subreddit": subredditname, "post": segments[3], "comment": segments[5]}
         if (len(segments) >= 4) and (segments[2] == "comments"):
             # a post reference
-            return {"type": "post", "subreddit": subredditname, "post": segments[3]}
+            return {"scheme": parts.scheme, "type": "post", "subreddit": subredditname, "post": segments[3]}
         else:
             # just a subreddit reference
-            return {"type": "subreddit", "subreddit": subredditname}
+            return {"scheme": parts.scheme, "type": "subreddit", "subreddit": subredditname}
     else:
         # unknown reddit reference
         return None
