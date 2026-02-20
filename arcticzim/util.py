@@ -292,9 +292,15 @@ def parse_reddit_url(url):
         subredditname = segments[1]
         if (len(segments) >= 6) and (segments[2] == "comments"):
             # a comment reference
+            if len(segments[3]) > 8:
+                # probably not a post id
+                return None
             return {"scheme": parts.scheme, "type": "comment", "subreddit": subredditname, "post": segments[3], "comment": segments[5]}
         if (len(segments) >= 4) and (segments[2] == "comments"):
             # a post reference
+            if len(segments[3]) > 8:
+                # probably not a post id
+                return None
             return {"scheme": parts.scheme, "type": "post", "subreddit": subredditname, "post": segments[3]}
         else:
             # just a subreddit reference

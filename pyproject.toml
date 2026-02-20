@@ -23,7 +23,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Topic :: File Formats",
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Topic :: System :: Archiving",
 ]
 requires-python = ">=3.7"
 dependencies = [
@@ -37,6 +39,7 @@ dependencies = [
     "Pillow",
     "yt-dlp",
     "redvid",
+    "tqdm",
 ]
 
 # optional dependencies
