@@ -1,0 +1,12 @@
+{# This is the timeline page for a subreddit. Expects "subreddit", "has_wiki", "date_to_pagenum" and "to_root" arguments. #}
+{% extends "subredditbase.html.jinja" %}
+
+{% block title %}
+    <TITLE>r/{{ subreddit.name }} - Timeline</TITLE>
+{% endblock %}
+
+{% block subredditcontent %}
+    {% with date_to_pagenum=date_to_pagenum, to_root=to_root %}
+        {% include "timeline.html.jinja" %}
+    {% endwith %}
+{% endblock %}

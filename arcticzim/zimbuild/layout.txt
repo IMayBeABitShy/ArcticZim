@@ -52,8 +52,11 @@ This file describes the ZIM layout.
 |   +---statistics/
 |   |   Subreddit statistics
 |   |
-|   +--rules/
-|       Subreddit rules
+|   +---rules/
+|   |   Subreddit rules
+|   |
+|   +---timeline/
+|       A timeline for accessing a specific time in a subreddit
 |
 +-+-u/
 | | Users

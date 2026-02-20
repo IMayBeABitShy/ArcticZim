@@ -383,6 +383,19 @@ def trim_word(word):
     return word
 
 
+def timestamp_to_date_triplet(timestamp):
+    """
+    Convert a timestamp into a (year, month, day) tuple.
+
+    @param timestamp: timestamp to convert
+    @type timestamp: L{int}
+    @return: a tuple of (year, month, day)
+    @rtype: L{tuple} of L{int}
+    """
+    d = datetime.datetime.fromtimestamp(timestamp)
+    return (d.year, d.month, d.day)
+
+
 if __name__ == "__main__":
     # test code
     val = int(input("n: "))

@@ -384,9 +384,9 @@ A {
 }
 
 
-/* wiki and rules */
+/* wiki, rules and timeline */
 
-.wikipage, .wikiindex, .subredditrules {
+.wikipage, .wikiindex, .subredditrules, .timeline {
   margin-left: 4em;
   margin-right: 4em;
 }
@@ -404,6 +404,15 @@ A {
 .rulemeta, .ruleviolationtext {
   font-size: 80%;
   color: scale-color($light_text_color, $lightness: 10%);
+}
+
+.timeline-year {
+  border: 1px solid black;
+  padding-left: 2em;
+
+  &:first-of-type {
+    margin-top: 2em;
+  }
 }
 
 

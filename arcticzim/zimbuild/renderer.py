@@ -9,6 +9,8 @@ The renderer generates HTML pages.
 @type SUBREDDITS_ON_INDEX_PAGE: L{int}
 @var SUBREDDITS_PER_PAGE: how many subreddits should be listed on a page
 @type SUBREDDITS_PER_PAGE: L{int}
+@var MONTH_NAMES: a mapping of month number -> month name
+@type MONTH_NAMES: L{dict} of L{int} -> L{str}
 """
 import json
 import datetime
@@ -26,6 +28,7 @@ except ImportError:
     minify_html = None
 
 from ..util import format_size, format_number, get_resource_file_path, parse_reddit_url
+from ..util import timestamp_to_date_triplet
 from ..downloader import MediaFileManager
 from .buckets import BucketMaker
 from .custommistune import CustomMistuneBlockLevelParser, relative_url_plugin
@@ -35,6 +38,21 @@ POSTS_PER_PAGE = 20
 MAX_ITEMS_PER_RESULT = 200
 SUBREDDITS_ON_INDEX_PAGE = 20
 SUBREDDITS_PER_PAGE = 40
+
+MONTH_NAMES = {
+    1: "January",
+    2: "February",
+    3: "March",
+    4: "April",
+    5: "May",
+    6: "June",
+    7: "July",
+    8: "August",
+    9: "September",
+    10: "October",
+    11: "November",
+    12: "December",
+}
 
 
 class RenderedObject(object):
@@ -382,6 +400,7 @@ class HtmlRenderer(object):
         self.environment.filters["first_nonzero"] = self._first_nonzero_filter
         self.environment.filters["stickysort"] = self._stickysort_filter
         self.environment.filters["render_postsummary_by_url"] = self._render_postsummary_by_url
+        self.environment.filters["month"] = self._month_filter
         self.environment.filters["debug"] = print
 
         # configure tests
@@ -554,6 +573,9 @@ class HtmlRenderer(object):
                 ),
             )
             items_in_result += 1
+        else:
+            # when sorting by new, keep track of the first page a date occurs
+            date_to_pagenum = {}
         # prepare rendering the subreddit pages
         list_page_template = self.environment.get_template("subredditpage.html.jinja")
         num_pages = math.ceil(num_posts / POSTS_PER_PAGE)
@@ -562,6 +584,8 @@ class HtmlRenderer(object):
         page_index = 1
         for post in posts:
             bucket = bucketmaker.feed(post)
+            if sort == "new":
+                date_to_pagenum[timestamp_to_date_triplet(post.created_utc)] = page_index
             if bucket is not None:
                 items_in_result += self._render_subreddit_postlist_page(
                     subreddit=subreddit,
@@ -594,6 +618,27 @@ class HtmlRenderer(object):
                 yield result
                 result = RenderResult()
                 items_in_result = 0
+        if sort == "new":
+            # when sorting by new, we also add the timeline page
+            timeline_template = self.environment.get_template("subreddittimelinepage.html.jinja")
+            page = timeline_template.render(
+                to_root="../../..",
+                subreddit=subreddit,
+                has_wiki=has_wiki,
+                # convert triplets so that we can use groupby in the templates
+                date_to_pagenum=[
+                    {"year": k[0], "month": k[1], "day": k[2], "pagenum": v}
+                    for k, v in date_to_pagenum.items()
+                ],
+            )
+            result.add(
+                HtmlPage(
+                    path="r/{}/timeline/".format(subreddit.name),
+                    content=self.minify_html(page),
+                    title="r/{} - Timeline".format(subreddit.name),
+                    is_front=False,
+                ),
+            )
         yield result
 
     def _render_subreddit_postlist_page(self, subreddit, posts, page_index, num_pages, template, sort, has_wiki, result):
@@ -1441,6 +1486,19 @@ class HtmlRenderer(object):
         @type comments: L{list} of L{arcticzim.db.models.Comment}
         """
         return sorted(comments, reverse=True, key=lambda x: (x is True))
+
+    def _month_filter(self, n):
+        """
+        Convert a number to a month name.
+
+        @param n: month number
+        @type n: L{int}
+        @return: the name of the month
+        @rtype: L{str}
+        """
+        if n < 0 or n > 12:
+            raise ValueError("Invalid month: {}!".format(n))
+        return MONTH_NAMES[n]
 
     def _render_postsummary_by_url(self, url, to_root):
         """

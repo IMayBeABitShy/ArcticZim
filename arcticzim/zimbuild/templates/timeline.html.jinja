@@ -1,0 +1,23 @@
+{# This is a timeline, mapping dates to pagenumbers. Expects "date_to_pagenum" and "to_root" arguments. #}
+
+{% block timeline %}
+    <DIV class="timeline">
+        {% for yeargroup in date_to_pagenum|groupby("year") %}
+            <DIV class="timeline-year">
+                <H1>{{ yeargroup.grouper }}</H1>
+                {% for monthgroup in yeargroup.list|groupby("month") %}
+                    <DIV class="timeline-month">
+                        <H2>{{ monthgroup.grouper|month }}</h2>
+                        <UL>
+                            {% for entry in monthgroup.list|sort(attribute="day") %}
+                                <LI>
+                                    <A href="../new_page_{{ entry["pagenum"] }}/">{{ entry["year"] }}-{{ entry.month }}-{{ entry.day }}</A>
+                                </LI>
+                            {% endfor %}
+                        </UL>
+                    </DIV>
+                {% endfor %}
+            </DIV>
+        {% endfor %}
+    </DIV>
+{% endblock %}
