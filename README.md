@@ -55,6 +55,7 @@ Please note that this tool is aimed at users using a linux system and having exp
 
 **A note on fairness:** This project is not related to Arctic Shift in any way. Arctic Shift provides the reddit data and the endpoints for this. The resources of that project are limited, so please be mindful of making to many requests using this tool. The [Arctic Shift documentation](https://github.com/ArthurHeitmann/arctic_shift) may provide some more details and a way to contact the user running that service.
 
+**A warning on database consistency:** ArcticZim uses a database to store various data (e.g. posts, media informations, ...). Most commands modify the database. Currently, aborting these commands will not restore the initial state - aborting an import may result in some posts still being added to the database.
 
 ### Step 1: Installation
 
@@ -92,6 +93,8 @@ Simply run `arcticzim import --posts-file <path/to/posts/file> --comments-file <
 
 **Example:** let's assume you've downloaded r/kiwix, then the command would be `arcticzim import --posts-file r_kiwix_posts.jsonl --comments-file r_kiwix_comments.jsonl "sqlite:///db.sqlite"`
 
+**Warning:** Aborting the import will (currently) may result in some of the posts still being added to the database.
+
 ### Step 5: Fetch additional reddit content from Arctic Shift
 
 In this step, we'll fetch additional reddit data from Arctic Shift that was not part of the previously imported dumps. This includes, for example, subreddit wikis.
@@ -99,6 +102,8 @@ In this step, we'll fetch additional reddit data from Arctic Shift that was not 
 The command you'll have to run is `arcticzim fetch-extra <database_url>`.
 
 Note that this will recursively search for references - if, for example, a post is referenced, it will be fetched, followed by a fetch for the subbreddit wiki, ... . If you don't want this, simply specify `--single` and only a single fetch round will be performed.
+
+**Warning:** Aborting the import will (currently) may result in some of the posts still being added to the database. This is especially important when using `--single`.
 
 ### Step 6: Download media
 
