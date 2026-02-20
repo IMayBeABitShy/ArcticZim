@@ -3,6 +3,8 @@ Various utility functions.
 
 @var ALLOWED_WORD_LETTERS: a regular expression pattern used to to identify where words end.
 @type ALLOWED_WORD_LETERS: L{re.Pattern}
+@var ALLOWED_REDDIT_NAME_LETTERS: a regular expression pattern used to normalize reddit names
+@type ALLOWED_REDDIT_NAME_LETTERS: L{re.Pattern}
 @var URL: a regular expression matching likely URLs
 @type URL: L{re.Pattern}
 """
@@ -14,6 +16,7 @@ from urllib.parse import urlparse
 
 
 ALLOWED_WORD_LETTERS = re.compile(r"[^\w|\-]")
+ALLOWED_REDDIT_NAME_LETTERS = re.compile(r"[^A-Za-z0-9_\-]")
 # from https://stackoverflow.com/a/3809435 (modified)
 URL = re.compile(r"https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*[-a-zA-Z0-9@:%_\+.~#?&//=])")
 
@@ -283,31 +286,68 @@ def parse_reddit_url(url):
     if len(segments) == 0:
         # just a general reddit url
         return None
-    if segments[0] in ("u", "user"):
-        # a user reference
-        username = segments[1]
-        return {"scheme": parts.scheme, "type": "user", "username": username}
-    elif segments[0] == "r":
-        # a subreddit, post or comment reference
-        subredditname = segments[1]
-        if (len(segments) >= 6) and (segments[2] == "comments"):
-            # a comment reference
-            if len(segments[3]) > 8:
-                # probably not a post id
-                return None
-            return {"scheme": parts.scheme, "type": "comment", "subreddit": subredditname, "post": segments[3], "comment": segments[5]}
-        if (len(segments) >= 4) and (segments[2] == "comments"):
-            # a post reference
-            if len(segments[3]) > 8:
-                # probably not a post id
-                return None
-            return {"scheme": parts.scheme, "type": "post", "subreddit": subredditname, "post": segments[3]}
+    try:
+        if segments[0] in ("u", "user"):
+            # a user reference
+            username = segments[1]
+            return {
+                "scheme": parts.scheme,
+                "type": "user",
+                "username": trim_reddit_name(username),
+            }
+        elif segments[0] == "r":
+            # a subreddit, post or comment reference
+            subredditname = segments[1]
+            if (len(segments) >= 6) and (segments[2] == "comments"):
+                # a comment reference
+                if len(segments[3]) > 8:
+                    # probably not a post id
+                    return None
+                return {
+                    "scheme": parts.scheme,
+                    "type": "comment",
+                    "subreddit": trim_reddit_name(subredditname),
+                    "post": trim_reddit_name(segments[3]),
+                    "comment": trim_reddit_name(segments[5]),
+                }
+            if (len(segments) >= 4) and (segments[2] == "comments"):
+                # a post reference
+                if len(segments[3]) > 8:
+                    # probably not a post id
+                    return None
+                return {
+                    "scheme": parts.scheme,
+                    "type": "post",
+                    "subreddit": trim_reddit_name(subredditname),
+                    "post": trim_reddit_name(segments[3]),
+                }
+            else:
+                # just a subreddit reference
+                return {
+                    "scheme": parts.scheme,
+                    "type": "subreddit",
+                    "subreddit": trim_reddit_name(subredditname),
+                }
         else:
-            # just a subreddit reference
-            return {"scheme": parts.scheme, "type": "subreddit", "subreddit": subredditname}
-    else:
-        # unknown reddit reference
+            # unknown reddit reference
+            return None
+    except IndexError:
+        # one of the segments of the URL was empty
+        # this is most likely not a URL actually referencing a specific
+        # object
         return None
+
+
+def trim_reddit_name(s):
+    """
+    Trim a reddit 'name', which may be a username, subredditname or ID.
+
+    @param s: name to trim
+    @type s: L{str}
+    @return: the trimmed name
+    @rtype: L{str}
+    """
+    return ALLOWED_REDDIT_NAME_LETTERS.sub("", s).strip()
 
 
 def trim_title(s):
