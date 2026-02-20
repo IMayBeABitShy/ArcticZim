@@ -281,7 +281,7 @@ def do_redvid_download(url, mediadir, outpath):
     downloader = RedvidDL(url=url, path=mediadir, min_q=True)
     try:
         path = downloader.download()
-    except Exception as e:
+    except BaseException as e:
         raise DownloadFailed("redvid raised an exception when attempting to download video") from e
     mimetype = guess_type(path)[0] or "video/mp4"
     os.rename(path, outpath)
