@@ -31,10 +31,12 @@ requires-python = ">=3.7"
 dependencies = [
     "libzim",
     "sqlalchemy",
-    "htmlmin",
+    # NOTE: using the following instead of htmlmin for compatibility
+    "htmlmin2",
     "jinja2",
     "mistune",
-    "pyScss",
+    # NOTE: using the following instead of pyScss for compatibility
+    "mrowrpurr-pyscss",
     "requests",
     "Pillow",
     "yt-dlp",
