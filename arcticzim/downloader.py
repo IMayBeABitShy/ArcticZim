@@ -345,9 +345,9 @@ def get_urls_from_post(post, include_reddit_videos=True, include_external_videos
         media_metadata = json.loads(post.media_metadata)
         if media_metadata:
             for img_data in media_metadata.values():
-                if "s" in img_data:
+                if ("s" in img_data) and ("u" in img_data["s"]):
                     urls.append(img_data["s"]["u"])
-                elif "p" in img_data:
+                elif ("p" in img_data) and (len(img_data["p"]) > 0) and ("u" in img_data["p"][-1]):
                     urls.append(img_data["p"][-1]["u"])
     if include_comments:
         for comment in post.comments:
