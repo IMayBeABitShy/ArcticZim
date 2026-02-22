@@ -8,7 +8,7 @@ import json
 from mimetypes import guess_type
 from urllib.parse import urlparse, parse_qsl, unquote_plus, urlunparse, urlencode
 
-from sqlalchemy import select, func
+from sqlalchemy import select, delete, func, or_
 from sqlalchemy.orm import undefer, selectinload
 import requests
 import tqdm
@@ -303,13 +303,15 @@ def post_process(mediadir, mediafile, max_image_dimension=512):
     """
     path = os.path.join(mediadir, hash_url(mediafile.url))
     if mimetype_is_image(mediafile.mimetype):
-        mimetype, size = minimize_image(
+        mres = minimize_image(
             path,
             max_w=max_image_dimension,
             max_h=max_image_dimension,
         )
-        mediafile.size = size
-        mediafile.mimetype = mimetype
+        if mres is not None:
+            mimetype, size = mres
+            mediafile.size = size
+            mediafile.mimetype = mimetype
 
 
 def get_urls_from_post(post, include_reddit_videos=True, include_external_videos=False, include_comments=False):
@@ -446,6 +448,137 @@ def download_all(
                 max_image_dimension=max_image_dimension,
             )
             time.sleep(sleep)
+
+
+def check_mediafile(mediafile, mediadir):
+    """
+    Check the validity of a single mediafile.
+
+    @param mediafile: mediafile to check
+    @type mediafile: L{arcticzim.db.models.MediaFile}
+    @param mediadir: media directory where files are stored
+    @type mediadir: L{str}
+    @return: whether the file and/or files are valid or not
+    @rtype: L{bool}
+    """
+    url_hash = hash_url(mediafile.url)
+    path = os.path.join(mediadir, url_hash)
+    # check if file exists for downlaoded mediafiles
+    if mediafile.downloaded:
+        if not os.path.exists(path):
+            return False
+        # check if file size matches
+        with open(path, "rb") as fin:
+            fin.seek(0, os.SEEK_END)
+            size = fin.tell()
+        if size != mediafile.size:
+            print("size difference: expected {} got {}".format(mediafile.size, size))
+            return False
+    # all checks passed
+    return True
+
+
+def check_all(
+    session,
+    mediadir,
+    remove=False,
+):
+    """
+    Check all downloaded files of posts.
+
+    @param session: sqlalchemy session to use
+    @type session: L{sqlalchemy.orm.Session}
+    @param mediadir: directory to store media in
+    @type mediadir: L{str}
+    @param remove: if nonzero, remove invalid media files
+    @type remove: L{bool}
+    """
+    # we only need to check primary mediafiles
+    n = session.execute(
+        select(
+            func.count(MediaFile.uid)
+        ).where(
+            MediaFile.primary_uid == None,
+        )
+    ).one()[0]
+    stmt = select(MediaFile).where(
+        MediaFile.primary_uid == None,
+    ).execution_options(
+        yield_per=1000,
+    )
+    with tqdm.tqdm(desc="Checking media", total=n, unit="files") as bar:
+        for mediafile in session.execute(stmt).scalars():
+            url_hash = hash_url(mediafile.url)
+            outpath = os.path.join(mediadir, url_hash)
+            valid = check_mediafile(mediafile, mediadir=mediadir)
+            if not valid:
+                bar.write("File for URL {} is invalid.".format(mediafile.url))
+                if remove:
+                    if os.path.exists(outpath):
+                        os.remove(outpath)
+                    session.execute(
+                        delete(MediaFile).where(
+                            or_(
+                                MediaFile.uid == uid,
+                                MediaFile.primary_uid == uid,
+                            )
+                        )
+                    )
+                    session.commit()
+            bar.update(1)
+
+
+def delete_all(
+    session,
+    mediadir,
+    delete_images=True,
+    failed_only=False,
+):
+    """
+    Delete all downloaded files of posts.
+
+    @param session: sqlalchemy session to use
+    @type session: L{sqlalchemy.orm.Session}
+    @param mediadir: directory to store media in
+    @type mediadir: L{str}
+    @param delete_images: if nonzero, delete image files too
+    @type delete_images: L{bool}
+    @param failed_only: if nonzero, only delete failed downloads
+    @type failed_only: L{bool}
+    @return: the number of deleted files
+    @rtype: L{int}
+    """
+    conditions = []
+    if failed_only:
+        conditions.append(MediaFile.downloaded == False)
+    conditions = tuple(conditions)
+    n = session.execute(
+        select(
+            func.count(MediaFile.uid)
+        ).where(
+            *conditions,
+        )
+    ).one()[0]
+    stmt = select(MediaFile).where(
+        *conditions,
+    ).execution_options(
+        yield_per=1000,
+    )
+    n_deleted = 0
+    with tqdm.tqdm(desc="Deleting media", total=n, unit="files") as bar:
+        for mediafile in session.execute(stmt).scalars():
+            url_hash = hash_url(mediafile.url)
+            outpath = os.path.join(mediadir, url_hash)
+            if (mediafile.mimetype is not None) and mediafile.mimetype.startswith("image") and not delete_images:
+                bar.update(1)
+                continue
+            session.execute(delete(MediaFile).where(MediaFile.uid == mediafile.uid))
+            n_deleted += 1
+            if os.path.exists(outpath):
+                os.remove(outpath)
+            bar.update(1)
+    session.commit()
+    return n_deleted
 
 
 class MediaFileManager(object):

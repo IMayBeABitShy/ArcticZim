@@ -20,6 +20,8 @@ from .db.connection import ConnectionConfig
 from .importer import import_posts_from_file, import_comments_from_file, prepare_db
 from .zimbuild.builder import ZimBuilder, BuildOptions
 from .downloader import download_all as download_all_media
+from .downloader import check_all as check_all_media
+from .downloader import delete_all as delete_all_media
 from .fetcher import fetch_all
 from .util import format_timedelta
 
@@ -134,6 +136,54 @@ def run_media_download(ns):
         )
 
 
+def run_media_check(ns):
+    """
+    Run the check-media command.
+
+    @param ns: namespace containing arguments
+    @type ns: L{argparse.Namespace}
+    """
+    print("Creating media directory if neccessary...")
+    if not os.path.exists(ns.mediadir):
+        os.mkdir(ns.mediadir)
+    connection_config = _connection_config_from_ns(ns)
+    print("Done. Connecting to database...")
+    engine = connection_config.connect()
+    print("Done. Creating database session...")
+    with Session(engine) as session:
+        print("Done. Starting check.")
+        check_all_media(
+            session=session,
+            mediadir=ns.mediadir,
+            remove=ns.remove,
+        )
+
+
+def run_media_delete(ns):
+    """
+    Run the delete-media command.
+
+    @param ns: namespace containing arguments
+    @type ns: L{argparse.Namespace}
+    """
+    print("Creating media directory if neccessary...")
+    if not os.path.exists(ns.mediadir):
+        os.mkdir(ns.mediadir)
+    connection_config = _connection_config_from_ns(ns)
+    print("Done. Connecting to database...")
+    engine = connection_config.connect()
+    print("Done. Creating database session...")
+    with Session(engine) as session:
+        print("Done. Starting deletion.")
+        n_deleted = delete_all_media(
+            session=session,
+            mediadir=ns.mediadir,
+            delete_images=ns.delete_images,
+            failed_only=ns.failed_only,
+        )
+    print("Done. Deleted {} files.".format(n_deleted))
+
+
 def main():
     """
     The main function.
@@ -212,7 +262,7 @@ def main():
     mediadownload_parser.add_argument(
         "database",
         action="store",
-        help="database to load objects from, as sqlalchemy connection URL",
+        help="database to load objects from, as a sqlalchemy connection URL",
     )
     mediadownload_parser.add_argument(
         "--media-dir",
@@ -254,6 +304,58 @@ def main():
         help="also download media linked in comments",
     )
 
+    mediacheck_parser = subparsers.add_parser(
+        "check-media",
+        help="check validity of media files",
+    )
+    mediacheck_parser.add_argument(
+        "database",
+        action="store",
+        help="database to load objects from, as a sqlalchemy connection URL",
+    )
+    mediacheck_parser.add_argument(
+        "--media-dir",
+        action="store",
+        dest="mediadir",
+        default="arcticzim_media/",
+        help="directory where media is stored in",
+    )
+    mediacheck_parser.add_argument(
+        "--remove",
+        action="store_true",
+        dest="remove",
+        help="remove invalid files",
+    )
+
+    mediadelete_parser = subparsers.add_parser(
+        "delete-media",
+        help="delete media files",
+    )
+    mediadelete_parser.add_argument(
+        "database",
+        action="store",
+        help="database to load objects from, as a sqlalchemy connection URL",
+    )
+    mediadelete_parser.add_argument(
+        "--media-dir",
+        action="store",
+        dest="mediadir",
+        default="arcticzim_media/",
+        help="directory where media is stored in",
+    )
+    mediadelete_parser.add_argument(
+        "--video-only",
+        action="store_false",
+        dest="delete_images",
+        help="Only delete video files",
+    )
+    mediadelete_parser.add_argument(
+        "--failed-only",
+        action="store_true",
+        dest="failed_only",
+        help="Only delete failed downloads",
+    )
+
     # parser for the ZIM build
     build_parser = subparsers.add_parser(
         "build",
@@ -286,6 +388,10 @@ def main():
         run_fetch(ns)
     elif ns.command == "download-media":
         run_media_download(ns)
+    elif ns.command == "check-media":
+        run_media_check(ns)
+    elif ns.command == "delete-media":
+        run_media_delete(ns)
     elif ns.command == "build":
         run_build(ns)
     else:

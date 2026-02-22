@@ -8,6 +8,10 @@ import os
 from PIL import Image
 
 
+# allow processing of larger images
+Image.MAX_IMAGE_PIXELS *= 10
+
+
 def mimetype_is_image(mimetype):
     """
     Check if a mimetype refers to an image mimetype.
@@ -48,25 +52,29 @@ def minimize_image(path, max_w=512, max_h=512):
     @type max_w: L{int}
     @param max_h: max height for the new image
     @type max_h: L{int}
-    @return: a tuple of (new_mimetype, new_size)
-    @rtype: L{tuple} of (L{str}, L{int})
+    @return: a tuple of (new_mimetype, new_size)  or L{None} if the minimization failed
+    @rtype: L{tuple} of (L{str}, L{int}) or L{None}
     """
-    with Image.open(path) as img:
-        # load image and close the file
-        img.load()
-        # resize
-        w_ratio = (max_w / img.width)
-        h_ratio = (max_h / img.height)
-        ratio = min(w_ratio, h_ratio, 1)
-        new_w = math.floor(img.width * ratio)
-        new_h = math.floor(img.height * ratio)
-        new_img = img.resize((new_w, new_h))
-    with open(path, "wb") as fout:
-        # convert and save
-        new_img.save(fout, "WEBP")
-        fout.seek(0, os.SEEK_END)
-        size = fout.tell()
-    return ("image/webp", size)
+    try:
+        with Image.open(path) as img:
+            # load image and close the file
+            img.load()
+            # resize
+            w_ratio = (max_w / img.width)
+            h_ratio = (max_h / img.height)
+            ratio = min(w_ratio, h_ratio, 1)
+            new_w = math.floor(img.width * ratio)
+            new_h = math.floor(img.height * ratio)
+            new_img = img.resize((new_w, new_h))
+    except Image.DecompressionBombError:
+        return None
+    else:
+        with open(path, "wb") as fout:
+            # convert and save
+            new_img.save(fout, "WEBP")
+            fout.seek(0, os.SEEK_END)
+            size = fout.tell()
+        return ("image/webp", size)
 
 
 if __name__ == "__main__":
