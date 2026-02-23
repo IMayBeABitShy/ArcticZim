@@ -133,6 +133,7 @@ def run_media_download(ns):
             download_external_videos=ns.download_external_videos,
             max_image_dimension=ns.max_image_dimension,
             include_comments=ns.include_comments,
+            ignore_postprocessing_errors=ns.ignore_postprocessing_errors,
         )
 
 
@@ -302,6 +303,12 @@ def main():
         action="store_true",
         dest="include_comments",
         help="also download media linked in comments",
+    )
+    mediadownload_parser.add_argument(
+        "--strict-errors",
+        action="store_false",
+        dest="ignore_postprocessing_errors",
+        help="Raise errors on postprocessing failure",
     )
 
     mediacheck_parser = subparsers.add_parser(

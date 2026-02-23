@@ -101,7 +101,15 @@ def has_downloaded(session, url, any_status=True):
     return (mf is not None)
 
 
-def download(session, url, mediadir, enable_post_processing=True, download_videos=True, max_image_dimension=512):
+def download(
+    session,
+    url,
+    mediadir,
+    enable_post_processing=True,
+    download_videos=True,
+    max_image_dimension=512,
+    ignore_postprocessing_errors=False,
+):
     """
     Download the media at the specified URL.
 
@@ -117,6 +125,8 @@ def download(session, url, mediadir, enable_post_processing=True, download_video
     @type download_videos: L{bool}
     @param max_image_dimension: how many pixels the wider side of an image may have at most
     @type max_image_dimension: L{int}
+    @param ignore_postprocessing_errors: if nonzero, ignore postprocessing errors
+    @type ignore_postprocessing_errors: L{nool}
     """
     url_hash = hash_url(url)
     outpath = os.path.join(mediadir, url_hash)
@@ -199,7 +209,12 @@ def download(session, url, mediadir, enable_post_processing=True, download_video
             size=size,
         )
         if enable_post_processing:
-            post_process(mediadir, mf, max_image_dimension=max_image_dimension)
+            post_process(
+                mediadir,
+                mf,
+                max_image_dimension=max_image_dimension,
+                ignore_errors=ignore_postprocessing_errors,
+            )
         session.add(mf)
         session.commit()
 
@@ -288,7 +303,7 @@ def do_redvid_download(url, mediadir, outpath):
     return mimetype
 
 
-def post_process(mediadir, mediafile, max_image_dimension=512):
+def post_process(mediadir, mediafile, max_image_dimension=512, ignore_errors=False):
     """
     Post process an image file.
 
@@ -300,18 +315,25 @@ def post_process(mediadir, mediafile, max_image_dimension=512):
     @type mediafile: L{arcticzim.db.models.MediaFile}
     @param max_image_dimension: how many pixels the wider side of an image may have at most
     @type max_image_dimension: L{int}
+    @param ignore_errors: if nonzero, ignore any errors that occur
+    @type ignore_errors: L{bool}
     """
     path = os.path.join(mediadir, hash_url(mediafile.url))
     if mimetype_is_image(mediafile.mimetype):
-        mres = minimize_image(
-            path,
-            max_w=max_image_dimension,
-            max_h=max_image_dimension,
-        )
-        if mres is not None:
-            mimetype, size = mres
-            mediafile.size = size
-            mediafile.mimetype = mimetype
+        try:
+            mres = minimize_image(
+                path,
+                max_w=max_image_dimension,
+                max_h=max_image_dimension,
+            )
+        except Exception:
+            if not ignore_errors:
+                raise
+        else:
+            if mres is not None:
+                mimetype, size = mres
+                mediafile.size = size
+                mediafile.mimetype = mimetype
 
 
 def get_urls_from_post(post, include_reddit_videos=True, include_external_videos=False, include_comments=False):
@@ -398,6 +420,7 @@ def download_all(
     download_external_videos=False,
     include_comments=False,
     max_image_dimension=512,
+    ignore_postprocessing_errors=False,
 ):
     """
     Download all files of posts.
@@ -418,6 +441,8 @@ def download_all(
     @type include_comments: L{bool}
     @param max_image_dimension: how many pixels the wider side of an image may have at most
     @type max_image_dimension: L{int}
+    @param ignore_postprocessing_errors: if nonzero, ignore any errors that occur during postprocessing
+    @type ignore_postprocessing_errors: L{bool}
     """
     n = session.execute(select(func.count(Post.uid))).one()[0]
     stmt = select(Post).options(
@@ -446,6 +471,7 @@ def download_all(
                 enable_post_processing=enable_post_processing,
                 download_videos=(download_external_videos or download_reddit_videos),
                 max_image_dimension=max_image_dimension,
+                ignore_postprocessing_errors=ignore_postprocessing_errors,
             )
             time.sleep(sleep)
 

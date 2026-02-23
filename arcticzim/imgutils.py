@@ -5,11 +5,13 @@ import argparse
 import math
 import os
 
-from PIL import Image
+from PIL import Image, ImageFile
 
 
 # allow processing of larger images
 Image.MAX_IMAGE_PIXELS *= 10
+# robustness - do not crash with incomplete images
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 def mimetype_is_image(mimetype):
@@ -59,19 +61,33 @@ def minimize_image(path, max_w=512, max_h=512):
         with Image.open(path) as img:
             # load image and close the file
             img.load()
+            # find out if it is an animated image (e.g. GIF)
+            is_animated = hasattr(img, "is_animated") and img.is_animated
             # resize
             w_ratio = (max_w / img.width)
             h_ratio = (max_h / img.height)
             ratio = min(w_ratio, h_ratio, 1)
             new_w = math.floor(img.width * ratio)
             new_h = math.floor(img.height * ratio)
-            new_img = img.resize((new_w, new_h))
+            if not is_animated:
+                frames = [img.resize((new_w, new_h))]
+            else:
+                frames = []
+                for i in range(getattr(img, "n_frames", 1)):
+                    img.seek(i)
+                    frame = img.resize((new_w, new_h))
+                    frames.append(frame)
+
     except Image.DecompressionBombError:
         return None
     else:
         with open(path, "wb") as fout:
             # convert and save
-            new_img.save(fout, "WEBP")
+            if is_animated:
+                # animated images need to be saved differently
+                frames[0].save(fout, "WEBP", save_all=True, append_images=frames[1:])
+            else:
+                frames[0].save(fout, "WEBP")
             fout.seek(0, os.SEEK_END)
             size = fout.tell()
         return ("image/webp", size)
