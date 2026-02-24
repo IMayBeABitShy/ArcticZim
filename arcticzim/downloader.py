@@ -126,7 +126,9 @@ def download(
     @param max_image_dimension: how many pixels the wider side of an image may have at most
     @type max_image_dimension: L{int}
     @param ignore_postprocessing_errors: if nonzero, ignore postprocessing errors
-    @type ignore_postprocessing_errors: L{nool}
+    @type ignore_postprocessing_errors: L{bool}
+    @return: whether the file was downloaded or not
+    @rtype: l{bool}
     """
     url_hash = hash_url(url)
     outpath = os.path.join(mediadir, url_hash)
@@ -135,7 +137,7 @@ def download(
     try:
         if (is_ytdlp(url) or is_redvid(url)) and not is_probably_image:
             if not download_videos:
-                return
+                return False
             if is_redvid(url):
                 mimetype = do_redvid_download(url=url, mediadir=mediadir, outpath=outpath)
             else:
@@ -178,7 +180,7 @@ def download(
         )
         session.add(mo)
         session.commit()
-        return
+        return False
 
     existing_mf = session.execute(
         select(MediaFile).where(
@@ -199,7 +201,7 @@ def download(
         )
         session.add(mf)
         session.commit()
-        return
+        return False
     else:
         mf = MediaFile(
             url=unify_url(url),
@@ -217,6 +219,7 @@ def download(
             )
         session.add(mf)
         session.commit()
+        return True
 
 
 def is_ytdlp(url):
@@ -421,6 +424,7 @@ def download_all(
     include_comments=False,
     max_image_dimension=512,
     ignore_postprocessing_errors=False,
+    dry=False,
 ):
     """
     Download all files of posts.
@@ -443,7 +447,12 @@ def download_all(
     @type max_image_dimension: L{int}
     @param ignore_postprocessing_errors: if nonzero, ignore any errors that occur during postprocessing
     @type ignore_postprocessing_errors: L{bool}
+    @param dry: if nonzero, do not actually download anything
+    @type dry: L{bool}
+    @return: the number of files downloaded
+    @rtype: L{int}
     """
+    n_downloaded = 0
     n = session.execute(select(func.count(Post.uid))).one()[0]
     stmt = select(Post).options(
         undefer(Post.url),
@@ -460,20 +469,26 @@ def download_all(
             include_external_videos=download_external_videos,
             include_comments=include_comments,
         )
-        urls = set([url for url in urls if not has_downloaded(session=session, url=url)])
+        urls = set([unify_url(url) for url in urls if not has_downloaded(session=session, url=url)])
         if not urls:
             continue
         for url in tqdm.tqdm(urls, desc="downloading files for {}".format(post.id), total=len(urls), unit="files"):
-            download(
-                session=session,
-                url=url,
-                mediadir=mediadir,
-                enable_post_processing=enable_post_processing,
-                download_videos=(download_external_videos or download_reddit_videos),
-                max_image_dimension=max_image_dimension,
-                ignore_postprocessing_errors=ignore_postprocessing_errors,
-            )
-            time.sleep(sleep)
+            if not dry:
+                did_download = download(
+                    session=session,
+                    url=url,
+                    mediadir=mediadir,
+                    enable_post_processing=enable_post_processing,
+                    download_videos=(download_external_videos or download_reddit_videos),
+                    max_image_dimension=max_image_dimension,
+                    ignore_postprocessing_errors=ignore_postprocessing_errors,
+                )
+                if did_download:
+                    n_downloaded += 1
+                time.sleep(sleep)
+            else:
+                n_downloaded += 1
+    return n_downloaded
 
 
 def check_mediafile(mediafile, mediadir):
@@ -524,11 +539,11 @@ def check_all(
         select(
             func.count(MediaFile.uid)
         ).where(
-            MediaFile.primary_uid == None,
+            MediaFile.primary_uid == None,  # noqa
         )
     ).one()[0]
     stmt = select(MediaFile).where(
-        MediaFile.primary_uid == None,
+        MediaFile.primary_uid == None,  # noqa
     ).execution_options(
         yield_per=1000,
     )
@@ -545,8 +560,8 @@ def check_all(
                     session.execute(
                         delete(MediaFile).where(
                             or_(
-                                MediaFile.uid == uid,
-                                MediaFile.primary_uid == uid,
+                                MediaFile.uid == mediafile.uid,
+                                MediaFile.primary_uid == mediafile.uid,
                             )
                         )
                     )

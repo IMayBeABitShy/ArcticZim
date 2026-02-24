@@ -125,7 +125,7 @@ def run_media_download(ns):
     print("Done. Creating database session...")
     with Session(engine) as session:
         print("Done. Starting download.")
-        download_all_media(
+        n_downloaded = download_all_media(
             session=session,
             mediadir=ns.mediadir,
             enable_post_processing=ns.post_processing,
@@ -134,7 +134,9 @@ def run_media_download(ns):
             max_image_dimension=ns.max_image_dimension,
             include_comments=ns.include_comments,
             ignore_postprocessing_errors=ns.ignore_postprocessing_errors,
+            dry=ns.dry,
         )
+    print("Download complete. Downloaded {} files.".format(n_downloaded))
 
 
 def run_media_check(ns):
@@ -296,7 +298,7 @@ def main():
         type=int,
         dest="max_image_dimension",
         default=512,
-        help="Downscale images to this many pixels on their longer side",
+        help="downscale images to this many pixels on their longer side",
     )
     mediadownload_parser.add_argument(
         "--search-comments",
@@ -308,7 +310,13 @@ def main():
         "--strict-errors",
         action="store_false",
         dest="ignore_postprocessing_errors",
-        help="Raise errors on postprocessing failure",
+        help="raise errors on postprocessing failure",
+    )
+    mediadownload_parser.add_argument(
+        "--dry",
+        action="store_true",
+        dest="dry",
+        help="don't actually download anything",
     )
 
     mediacheck_parser = subparsers.add_parser(

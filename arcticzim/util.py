@@ -363,7 +363,7 @@ def trim_title(s):
     words = [trim_word(word) for word in words]
     title = " ".join(words)
     if len(title) > 230:
-      title = title[:230]
+        title = title[:230]
     return title
 
 
