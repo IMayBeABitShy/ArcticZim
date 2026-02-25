@@ -107,9 +107,12 @@ def import_posts(session, posts):
         kwargs["subreddit_name"] = subreddit_name
         kwargs["subreddit"] = subreddits[subreddit_name]
         # fill in remaining kwargs
-        for key in d.keys():
+        for orgkey in d.keys():
+            key = orgkey
+            if key == "media" and ("media_metadata" not in d):
+                key = "media_metadata"
             if key in POST_COLUMNS:
-                value = d[key]
+                value = d[orgkey]
                 if key == "edited" and isinstance(value, bool):
                     if value:
                         value = -1

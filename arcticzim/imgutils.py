@@ -1,9 +1,12 @@
 """
-Image-related utilities.
+Image and video related utilities.
 """
 import argparse
 import math
 import os
+import subprocess
+import tempfile
+import shutil
 
 from PIL import Image, ImageFile
 
@@ -91,6 +94,56 @@ def minimize_image(path, max_w=512, max_h=512):
             fout.seek(0, os.SEEK_END)
             size = fout.tell()
         return ("image/webp", size)
+
+
+def check_ffmpeg():
+    """
+    Check if ffmpeg is available.
+
+    @return: whether ffmpeg is available or not
+    @rtype: L{str}
+    """
+    proc = subprocess.run(["ffmpeg", "--help"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return (proc.returncode == 0)
+
+
+def reencode_video(path):
+    """
+    Reencode the video at target path.
+
+    @param path: path to file to reencode
+    @type path: L{str}
+    @return: a tuple of (new_mimetype, new_size)
+    @rtype: L{tuple} of (L{str}, L{int})
+    """
+    with tempfile.TemporaryDirectory() as tempdir:
+        outpath = os.path.join(tempdir, "av.mp4")
+        args = [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel", "panic",
+            "-y",
+            # "-i", "{0}video.mp4",
+            # "-i", "{0}audio.m4a",
+            "-i", path,
+            "-c:v", "libsvtav1",
+            "-preset", "5",
+            "-crf", "60",
+            "-vf", "scale=640:trunc(ow/a/2)*2",
+            "-c:a", "libopus",
+            "-b:a", "24k",
+            # "{0}av.mp4",
+            outpath,
+        ]
+        subprocess.check_call(args, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        # figure out the file size
+        with open(outpath, "rb") as fin:
+            fin.seek(0, os.SEEK_END)
+            new_size = os.SEEK_END
+        os.remove(path)
+        shutil.move(outpath, path)
+    return ("video/mp4", new_size)
+
 
 
 if __name__ == "__main__":

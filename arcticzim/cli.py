@@ -22,6 +22,7 @@ from .zimbuild.builder import ZimBuilder, BuildOptions
 from .downloader import download_all as download_all_media
 from .downloader import check_all as check_all_media
 from .downloader import delete_all as delete_all_media
+from .imgutils import check_ffmpeg
 from .fetcher import fetch_all
 from .util import format_timedelta
 
@@ -116,7 +117,10 @@ def run_media_download(ns):
     @param ns: namespace containing arguments
     @type ns: L{argparse.Namespace}
     """
-    print("Creating media directory if neccessary...")
+    print("Checking preconditions...")
+    if ns.post_processing and not check_ffmpeg():
+        print("WARNING: ffmpeg is not available, videos can not be post processed!")
+    print("Done. Creating media directory if neccessary...")
     if not os.path.exists(ns.mediadir):
         os.mkdir(ns.mediadir)
     connection_config = _connection_config_from_ns(ns)
@@ -135,6 +139,7 @@ def run_media_download(ns):
             include_comments=ns.include_comments,
             ignore_postprocessing_errors=ns.ignore_postprocessing_errors,
             dry=ns.dry,
+            sleep=ns.sleep,
         )
     print("Download complete. Downloaded {} files.".format(n_downloaded))
 
@@ -273,6 +278,13 @@ def main():
         dest="mediadir",
         default="arcticzim_media/",
         help="directory to store media in",
+    )
+    mediadownload_parser.add_argument(
+        "--sleep",
+        action="store",
+        type=float,
+        default=1,
+        help="how many seconds to wait between requests",
     )
     mediadownload_parser.add_argument(
         "--no-post-processing",

@@ -5,6 +5,7 @@ Database model definitions.
 @type ARCTICZIM_USERNAME: L{str}
 """
 import datetime
+import json
 
 from typing import List, Optional
 
@@ -262,6 +263,22 @@ class Post(Base):
             return False
         else:
             return True
+
+    @property
+    def video_url(self):
+        """
+        Return the video URL of this video post.
+
+        Assumes this is a video post.
+
+        @return: the URL to the video of this post
+        @rtype: L{str}
+        """
+        if isinstance(self.media_metadata, (str, bytes, bytearray)):
+            metadata = json.loads(self.media_metadata)
+            if ("reddit_video" in metadata) and ("dash_url" in metadata["reddit_video"]):
+                return metadata["reddit_video"]["dash_url"]
+        return self.url
 
 
 class Comment(Base):

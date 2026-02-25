@@ -5,6 +5,8 @@ import os
 import hashlib
 import time
 import json
+import subprocess
+import shutil
 from mimetypes import guess_type
 from urllib.parse import urlparse, parse_qsl, unquote_plus, urlunparse, urlencode
 
@@ -16,7 +18,7 @@ from yt_dlp import YoutubeDL
 from redvid import Downloader as RedvidDL
 
 from .db.models import MediaFile, Post, Comment
-from .imgutils import minimize_image, mimetype_is_image, mimetype_is_video
+from .imgutils import minimize_image, mimetype_is_image, mimetype_is_video, reencode_video
 from .util import get_urls_from_string
 
 
@@ -231,6 +233,10 @@ def is_ytdlp(url):
     @return: whether yt-dlp should be used to download target url
     @rtype: L{bool}
     """
+    if ("v.redd.it" in url) and (".mpd" in url):
+        # use yt-dlp to retrieve (possibily deleted) reddit videos
+        return True
+    # check if yt-dlp accepts it
     with YoutubeDL(params={"allowed_extractors": ["default", "-generic"]}) as yt:
         for ie in yt._ies.values():  # TODO: private attribute access is probably a bad idea
             if ie.suitable(url) and ie.working():
@@ -264,10 +270,11 @@ def do_ytldp_download(url, mediadir, outpath):
             raise DownloadFailed("yt-dlp raised an exception when attempting to download video") from e
     # todo: the following is probably inefficient for large file collections
     for fname in os.listdir(mediadir):
-        if fname.startswith(hashed_url):
+        if fname.startswith(hashed_url) and ("." in fname):
+            # the "." check serves replacement of older files
             break
     mimetype = guess_type(fname)[0] or "video/mp4"
-    os.rename(os.path.join(mediadir, fname), outpath)
+    shutil.move(os.path.join(mediadir, fname), outpath)
     return mimetype
 
 
@@ -280,7 +287,7 @@ def is_redvid(url):
     @return: whether redvid should be used to download target url
     @rtype: L{bool}
     """
-    return ("://v.redd.it" in url)
+    return ("://v.redd.it" in url) and (".mpd" not in url )
 
 
 def do_redvid_download(url, mediadir, outpath):
@@ -296,13 +303,13 @@ def do_redvid_download(url, mediadir, outpath):
     @return: the mimetype of the downloaded video
     @rtype: L{str}
     """
-    downloader = RedvidDL(url=url, path=mediadir, min_q=True)
+    downloader = RedvidDL(url=url, path=mediadir, max_q=True, log=False)
     try:
         path = downloader.download()
     except BaseException as e:
         raise DownloadFailed("redvid raised an exception when attempting to download video") from e
     mimetype = guess_type(path)[0] or "video/mp4"
-    os.rename(path, outpath)
+    shutil.move(path, outpath)
     return mimetype
 
 
@@ -337,6 +344,17 @@ def post_process(mediadir, mediafile, max_image_dimension=512, ignore_errors=Fal
                 mimetype, size = mres
                 mediafile.size = size
                 mediafile.mimetype = mimetype
+    elif mimetype_is_video(mediafile.mimetype):
+        try:
+            vres = reencode_video(path)
+        except Exception:
+            if not ignore_errors:
+                raise
+        else:
+            if vres is not None:
+                mimetype, size = vres
+                mediafile.size = size
+                mediafile.mimetype = mimetype
 
 
 def get_urls_from_post(post, include_reddit_videos=True, include_external_videos=False, include_comments=False):
@@ -358,7 +376,15 @@ def get_urls_from_post(post, include_reddit_videos=True, include_external_videos
     if post.post_hint in ("rich:video", ) and include_external_videos:
         urls.append(post.url)
     if post.post_hint in ("hosted:video", ) and include_reddit_videos:
-        urls.append(post.url)
+        if post.media_metadata is not None:
+            media_metadata = json.loads(post.media_metadata)
+        else:
+            media_metadata = {}
+        if ("reddit_video" in media_metadata) and ("dash_url" in media_metadata["reddit_video"]):
+            # attempt to download deleted videos
+            urls.append(media_metadata["reddit_video"]["dash_url"])
+        else:
+            urls.append(post.url)
     if post.post_hint in ("image", ):
         urls.append(post.url)
     if post.selftext:
