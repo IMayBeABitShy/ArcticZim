@@ -530,7 +530,7 @@ def check_mediafile(mediafile, mediadir):
     """
     url_hash = hash_url(mediafile.url)
     path = os.path.join(mediadir, url_hash)
-    # check if file exists for downlaoded mediafiles
+    # check if file exists for downloaded mediafiles
     if mediafile.downloaded:
         if not os.path.exists(path):
             return False

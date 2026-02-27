@@ -139,7 +139,7 @@ def reencode_video(path):
         # figure out the file size
         with open(outpath, "rb") as fin:
             fin.seek(0, os.SEEK_END)
-            new_size = os.SEEK_END
+            new_size = fin.tell()
         os.remove(path)
         shutil.move(outpath, path)
     return ("video/mp4", new_size)
