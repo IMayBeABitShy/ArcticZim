@@ -23,6 +23,7 @@ $comment_background_color_even: scale-color(#ddd, $lightness: 10%);
 $banner_color: skyblue;
 $uilink_color: black;
 $ui_background_color: lightgray;
+$ui_foreground_color: darkgray;
 $ui_border_color: gray;
 
 
@@ -48,6 +49,7 @@ $ui_border_color: gray;
   // $banner_color: skyblue !global;
   // $uilink_color: black !global;
   // $ui_background_color: lightgray !global;
+  // $ui_foreground_color: darkgray !global;
   // $ui_border_color: gray !global;
 } @else if $theme == dark {
   $background_color: #333 !global;
@@ -64,10 +66,11 @@ $ui_border_color: gray;
   $list_background_color_odd: #555 !global;
   $list_background_color_even: #888 !global;
   $comment_background_color_odd: $middleground_color !global;
-  $comment_background_color_even: scale-color(#ddd, $lightness: 10%) !global;
+  $comment_background_color_even: #a0a0a0 !global;
   $banner_color: darkblue !global;
   $uilink_color: lightgray !global;
   $ui_background_color: gray !global;
+  $ui_foreground_color: darkgray !global;
   $ui_border_color: lightgray !global;
 } @else {
   @error "Unknown theme #{$theme}";
@@ -501,6 +504,7 @@ A {
 
 .cur_page_button {
   border-bottom: 1px solid $uilink_color;
+  background-color: $ui_foreground_color;
 }
 
 /* other */
