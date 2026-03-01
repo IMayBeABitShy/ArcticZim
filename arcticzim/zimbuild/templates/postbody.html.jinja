@@ -13,8 +13,11 @@
                 {% include "poll.html.jinja" %}
             {% endwith %}
         {% elif (post.post_hint in ("rich:video", "hosted:video")) %}
-            {% if options.with_videos %}
+            {% if options.with_videos and ((not post.is_youtube) or (post.url is local_media_url)) %}
                 <video autoplay=1 controls=1 loop=1 src="{{ post.video_url|rewrite_url(to_root) }}">Video</video>
+            {% elif post.is_youtube %}
+                <iframe class="ytvideo" src="https://youtube.com/embed/{{ post.youtube_id }}" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+                </iframe>
             {% else %}
                 <P class="arcticzim-message">[Video not included]</P>
             {% endif %}

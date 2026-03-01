@@ -6,6 +6,7 @@ Database model definitions.
 """
 import datetime
 import json
+from urllib.parse import urlparse, parse_qs
 
 from typing import List, Optional
 
@@ -279,6 +280,39 @@ class Post(Base):
             if ("reddit_video" in metadata) and ("dash_url" in metadata["reddit_video"]):
                 return metadata["reddit_video"]["dash_url"]
         return self.url
+
+    @property
+    def is_youtube(self):
+        """
+        Check if this is a youtube post.
+
+        @return: whether this post is for a youtube video or not
+        @rtype: L{bool}
+        """
+        if "youtube." in self.url:
+            return ("v=" in self.url)
+        elif "youtu.be" in self.url:
+            return True
+        else:
+            return False
+
+    @property
+    def youtube_id(self):
+        """
+        Return the video ID of this youtube video.
+
+        Assumes that this is a youtube video.
+
+        @return: the id of the youtube video
+        @rtype: L{str}
+        """
+        parts = urlparse(self.url)
+        if "youtu.be" in self.url:
+            return parts.path[1:]
+        params = parse_qs(parts.query)
+        if "v" not in params:
+            raise ValueError("Can not extract youtube ID from: '{}'!".format(self.url))
+        return params["v"][0]
 
 
 class Comment(Base):

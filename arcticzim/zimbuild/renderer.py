@@ -406,6 +406,7 @@ class HtmlRenderer(object):
         # configure tests
         self.environment.tests["date"] = self._is_date
         self.environment.tests["local_post_url"] = self._is_local_post_url
+        self.environment.tests["local_media_url"] = self._is_local_media_url
 
     @staticmethod
     def minify_html(s):
@@ -1547,3 +1548,16 @@ class HtmlRenderer(object):
         if parsed["type"] != "post":
             return False
         return self.reference_rewriter.should_rewrite(parsed)
+
+    def _is_local_media_url(self, url):
+        """
+        Return True if url is a url referencing media that is locally available.
+
+        @param url: url to check
+        @type url: L{str}
+        @return: whether the url points to media that is locally available
+        @rtype: L{bool}
+        """
+        if not isinstance(url, str):
+            return False
+        return self.filemanager.is_media_locally_available(url)

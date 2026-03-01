@@ -758,3 +758,31 @@ class MediaFileManager(object):
             if new_url != url:
                 text = text.replace(url, new_url)
         return text
+
+    def is_media_locally_available(self, url):
+        """
+        Check if a media URL is both locally available and should be included.
+
+        @param url: url to check
+        @type url: L{str}
+        @return: whether the url points to media that can be included in the ZIM
+        @rtype: L{bool}
+        """
+        unified_url = unify_url(url)
+        if not unified_url:
+            # empty url - not locally available
+            return False
+        mf = self.session.execute(select(MediaFile).where(MediaFile.url == unified_url)).one_or_none()
+        if mf is None:
+            # file not downloaded, thus not available
+            return False
+        mf = mf[0]
+        if mf.primary_uid is not None:
+            mf = mf.primary
+        if not mf.downloaded:
+            # file not downloaded, thus not available
+            return False
+        if not self.should_rewrite(mf):
+            # we should not use this media file
+            return False
+        return True
