@@ -33,7 +33,8 @@ def reddit_reference_to_url(reference, to_root):
         postfix = "/r/{}/{}/#comment-{}".format(reference["subreddit"], reference["post"], reference["comment"])
     else:
         raise ValueError("Unknown reference: {}".format(reference))
-    return "//" + to_root + postfix
+    # return "//" + to_root + postfix
+    return to_root + postfix
 
 
 def get_reddit_references_from_post(post):
