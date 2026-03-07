@@ -11,6 +11,20 @@ import datetime
 from tqdm.auto import tqdm
 
 
+def write_jsonl(path, iterable):
+    """
+    Create a jsonl file.
+
+    @param path: path to write to
+    @type path: l{str}
+    @param iterable: iterable to get data from, yielding L{dict}
+    @type iterable: any iterable
+    """
+    with open(path, "w") as fout:
+        for entry in iterable:
+            fout.write(json.dumps(entry) + "\n")
+
+
 def process_jsonl(path, desc="Reading file"):
     """
     Process a jsonl file, yielding each element.

@@ -83,9 +83,20 @@ ArcticZim expects a database URL for most of its operations. See the [sqlalchemy
 
 ### Step 3: Getting the post and comment data
 
-Now we need to get the data from Arctic Shift. Currently, ArcticZim can not automatically download that data. You'll have to go to [the Arctic Shift download tool](https://arctic-shift.photon-reddit.com/download-tool) and enter the subreddit name. Make sure to check both "download posts" and "download comments". You'll be prompted to save **two** files. If you don't get any prompt, use a different webbrowser. Save those two files to some working directory.
+Now we need to get the data from Arctic Shift. You'll have to perform this step once for each subreddit you wish to include. There are two ways to do this.
 
-Repeat this step for every subreddit you wish to include.
+**Option 1: use the ArcticZim retriever:**
+
+ArcticZim includes a tool for downloading the data from arcticshift. Simply run the following two commands:
+
+```bash
+arcticzim retrieve --subreddit <subreddit_name_here> posts <path_to_save_posts_to>
+arcticzim retrieve --subreddit <subreddit_name_here> comments <path_to_save_comments_to>
+```
+
+**Option 2: use the Arctic Shift download tool:**
+
+Go to the [the Arctic Shift download tool](https://arctic-shift.photon-reddit.com/download-tool) and enter the subreddit name. Make sure to check both "download posts" and "download comments". You'll be prompted to save **two** files. If you don't get any prompt, use a different webbrowser. Save those two files to some working directory.
 
 ### Step 4: Importing the post and comment data
 

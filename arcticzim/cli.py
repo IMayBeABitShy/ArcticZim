@@ -4,6 +4,7 @@ This module contains the command line interface.
 import argparse
 import time
 import os
+import sys
 
 
 try:
@@ -24,7 +25,9 @@ from .downloader import check_all as check_all_media
 from .downloader import delete_all as delete_all_media
 from .imgutils import check_ffmpeg
 from .fetcher import fetch_all
+from .retriever import retrieve_posts, retrieve_comments
 from .util import format_timedelta
+from .jsonl import write_jsonl
 
 
 def _connection_config_from_ns(ns):
@@ -41,6 +44,35 @@ def _connection_config_from_ns(ns):
         verbose=(ns.verbose >= 2),
     )
     return config
+
+
+def run_retrieve(ns):
+    """
+    Run the retrieve command.
+
+    @param ns: namespace containing arguments
+    @type ns: L{argparse.Namespace}
+    """
+    if (ns.author is None) == (ns.subreddit is None):
+        print("Error: exactly one of author or subreddit needs to be specified!")
+        sys.exit(1)
+    if ns.type == "posts":
+        it = retrieve_posts(
+            subreddit=ns.subreddit,
+            author=ns.author,
+            sleep=ns.sleep,
+        )
+    elif ns.type == "comments":
+        it = retrieve_comments(
+            subreddit=ns.subreddit,
+            author=ns.author,
+            sleep=ns.sleep,
+        )
+    else:
+        raise ValueError("Invaldi retrieve type: {}!".format(ns.type))
+    write_jsonl(ns.path, it)
+    print("Done.")
+
 
 
 def run_import(ns):
@@ -60,9 +92,15 @@ def run_import(ns):
         print("Done. Preparing database...")
         prepare_db(session)
         print("Done. Importing posts...")
-        import_posts_from_file(session, path=ns.posts_file, batch_size=ns.batch_size)
+        if ns.posts_file is not None:
+            import_posts_from_file(session, path=ns.posts_file, batch_size=ns.batch_size)
+        else:
+            print(" -> No posts file specified, skipping...")
         print("Done. Importing comments..")
-        import_comments_from_file(session, path=ns.comments_file, batch_size=ns.batch_size)
+        if ns.comments_file is not None:
+            import_comments_from_file(session, path=ns.comments_file, batch_size=ns.batch_size)
+        else:
+            print(" -> No comments file specified, skipping...")
     print("Import finished in  {}".format(format_timedelta(time.time() - start)))
 
 
@@ -209,6 +247,37 @@ def main():
         required=True,
         help="command to execute",
     )
+
+    # parser for retrieving post data
+    retrieve_parser = subparsers.add_parser(
+        "retrieve",
+        help="retrieve raw post and comment data",
+    )
+    retrieve_parser.add_argument(
+        "type",
+        help="whether to download posts or comments",
+        choices=("posts", "comments"),
+    )
+    retrieve_parser.add_argument(
+        "--subreddit",
+        help="download from this subreddit",
+    )
+    retrieve_parser.add_argument(
+        "--author",
+        help="download from this author",
+    )
+    retrieve_parser.add_argument(
+        "path",
+        help="path to write data to.",
+    )
+    retrieve_parser.add_argument(
+        "--sleep",
+        action="store",
+        type=float,
+        default=1,
+        help="how many seconds to wait between requests",
+    )
+
 
     # parser for the import
     import_parser = subparsers.add_parser(
@@ -409,7 +478,9 @@ def main():
 
     ns = parser.parse_args()
 
-    if ns.command == "import":
+    if ns.command == "retrieve":
+        run_retrieve(ns)
+    elif ns.command == "import":
         run_import(ns)
     elif ns.command == "fetch-extra":
         run_fetch(ns)
