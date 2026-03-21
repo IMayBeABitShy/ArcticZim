@@ -58,6 +58,10 @@ def unify_url(url):
         if unquoted == _path:
             break
         _path = unquoted
+    # ensure path is stable for multi-unification by re-encoding some characters
+    to_replace = {"#": "%23", "%": "%25", "?": "%3F"}
+    for org, rep in to_replace.items():
+        _path = _path.replace(org, rep)
     parts = parts._replace(
         query=_query,
         path=_path,
