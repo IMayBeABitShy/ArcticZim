@@ -552,6 +552,146 @@ A {
 /* mobile */
 
 @media only screen and (max-width: 920px) {
+  .nav {
+    font-size: 110%;
+    padding-top: 0.3em;
+    padding-bottom: 0.3em;
+  }
+
+  .banner {
+    padding-top: 0.4em;
+  }
+
+  .bannertext {
+    font-size: 150%;
+  }
+
+  .content-cntr {
+    padding-left: 0.4em;
+    padding-right: 0.4em;
+  }
+
+  .subredditlist UL {
+    list-style-type: none;
+    columns: 1;
+    -webkit-columns: 1;
+    -moz-columns: 1;
+    padding-left: 0em;
+    padding-right: 0em;
+    margin-left: 0.4em;
+  }
+
+  .welcomediv {
+    margin-left: 0em;
+    margin-right: 0em;
+    margin: 0em;
+    margin-top: 1em;
+  }
+
+  .subredditinfo {
+    font-size: 70%;
+    padding-right: 0em;
+    margin-right: 0em;
+    padding-right: 0em;
+  }
+
+  .infodiv {
+    padding-left: 0.4em;
+    padding-right: 0.4em;
+  }
+
+  .postlist {
+    margin-left: 0em;
+  }
+
+  .postlist .postsummary {
+    padding-left: 0.8em;
+    padding-right: 0.8em;
+  }
+
+  .postsummary {
+  }
+
+  .posttitle {
+    font-size: 120%;
+  }
+
+  .postscore {
+    font-size: 120%;
+  }
+
+  .posticon {
+    height: 2em;
+    margin: 0.4em;
+  }
+
+  .subredditnav {
+    padding-left: 1em;
+  }
+
+  .subredditnav A {
+    margin-right: 1em;
+  }
+
+  .page_button {
+    width: 3em;
+    text-align: center;
+  }
+
+  .page_buttons {
+    padding-left: 1em;
+    padding-right: 1em;
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+  }
+
+.  postbody {
+    padding-left: 0em;
+  }
+
+  .postbody * {
+    max-width: 100%;
+  }
+
+  .timeline {
+    margin-left: 2em;
+    margin-right: 2em;
+  }
+
+  .wikiindex {
+    border: 1px solid red;
+    margin-left: 1.5em;
+    margin-right: 1.5em;
+  }
+
+  .wikiindex LI {
+    margin-bottom: 0.4em;
+  }
+
+  .wikipage {
+    margin-left: 1.5em;
+    margin-right: 1.5em;
+  }
+
+  .subredditrules {
+    margin-left: 1.5em;
+    margin-right: 1.5em;
+  }
+
+  .post {
+    padding-left: 1em;
+  }
+
+  .comment {
+    padding-left: 0.4em;
+  }
+
+  .commentlist {
+    padding-left: 0.4em;
+  }
+
 }
 
 /* for even smaller screens, mainly smartphones in portrait mode */
