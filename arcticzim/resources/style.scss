@@ -356,6 +356,10 @@ A {
   height: auto;
 }
 
+.blured {
+  filter: blur(20px);
+}
+
 /* user */
 .usercomments {
   padding-left: 1em;

@@ -95,5 +95,8 @@ This file describes the ZIM layout.
   |   A script handling the collapsing of content
   |
   +---preview.js
-      A script for showing the preview of posts in a list of posts
+  |   A script for showing the preview of posts in a list of posts
+  |
+  +---spoler.js
+  |   A script for blurring spoilers and NSFW posts
 

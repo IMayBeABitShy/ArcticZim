@@ -1,6 +1,6 @@
 {# This is the body of a post. Expects "post", "to_root" argument. #}
 
-<DIV class="postbody" id="postbody">
+<DIV class="postbody" id="postbody" data-nsfw="{{ post.over_18|bool2int }}" data-spoiler="{{ post.spoiler|bool2int }}">
     {% block postbody %}
         {% if post.post_hint == "image" %}
             <img class="postimage" src="{{ post.url|rewrite_url(to_root) }}"></image>
@@ -14,7 +14,7 @@
             {% endwith %}
         {% elif (post.post_hint in ("rich:video", "hosted:video")) %}
             {% if options.with_videos and ((not post.is_youtube) or (post.url is local_media_url)) %}
-                <video autoplay=1 controls=1 loop=1 src="{{ post.video_url|rewrite_url(to_root) }}">Video</video>
+                <video {{ ["autoplay", ""][(post.over_18 or post.spoiler)|bool2int] }} controls=1 loop=1 src="{{ post.video_url|rewrite_url(to_root) }}">Video</video>
             {% elif post.is_youtube %}
                 <iframe class="ytvideo" src="https://youtube.com/embed/{{ post.youtube_id }}" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
                 </iframe>

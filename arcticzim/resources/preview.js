@@ -20,6 +20,11 @@ function install_handlers() {
                     var content = document.getElementById("preview-" + post_id);
                     if (content.style.display == "block") {
                         content.style.display = "none";
+                        // also pause videos
+                        var videos = content.getElementsByTagName("video");
+                        for (const video of videos) {
+                            video.pause();
+                        }
                     } else {
                         content.style.display = "block";
                     }

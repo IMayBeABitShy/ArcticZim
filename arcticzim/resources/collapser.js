@@ -8,7 +8,7 @@ function install_handlers() {
             function() {
                 this.parentElement.classList.toggle("inactive-commenttitle");
                 this.parentElement.classList.toggle("commenttitle");
-                var content = this.parentElement.nextElementSibling;
+                var content = this.parentElement.parentElement.getElementsByClassName("commentcontent")[0];
                 if (content.style.display != "none") {
                     content.style.display = "none";
                     this.textContent = "[+]";

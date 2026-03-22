@@ -399,6 +399,7 @@ class HtmlRenderer(object):
         self.environment.filters["load_json"] = json.loads
         self.environment.filters["first_nonzero"] = self._first_nonzero_filter
         self.environment.filters["stickysort"] = self._stickysort_filter
+        self.environment.filters["bool2int"] = self._bool2int_filter
         self.environment.filters["render_postsummary_by_url"] = self._render_postsummary_by_url
         self.environment.filters["month"] = self._month_filter
         self.environment.filters["debug"] = print
@@ -1279,6 +1280,17 @@ class HtmlRenderer(object):
                 title="preview.js",
             ),
         )
+        # spoiler
+        path = get_resource_file_path("spoiler.js")
+        with open(path, "r", encoding="utf-8") as fin:
+            script = fin.read()
+        result.add(
+            Script(
+                path="scripts/spoiler.js",
+                content=script,
+                title="spoiler.js",
+            ),
+        )
         return result
 
     def render_info_pages(self):
@@ -1500,6 +1512,17 @@ class HtmlRenderer(object):
         if n < 0 or n > 12:
             raise ValueError("Invalid month: {}!".format(n))
         return MONTH_NAMES[n]
+
+    def _bool2int_filter(self, value):
+        """
+        Convert a boolean to an integer.
+
+        @param value: value to convert
+        @type value: L{bool}
+        @return: the converted value
+        @rtype: L{int}
+        """
+        return int(value)
 
     def _render_postsummary_by_url(self, url, to_root):
         """
