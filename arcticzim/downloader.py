@@ -499,7 +499,7 @@ def download_all(
             include_external_videos=download_external_videos,
             include_comments=include_comments,
         )
-        urls = set([unify_url(url) for url in urls if not has_downloaded(session=session, url=url)])
+        urls = set([url for url in urls if not has_downloaded(session=session, url=url)])
         if not urls:
             continue
         for url in tqdm.tqdm(urls, desc="downloading files for {}".format(post.id), total=len(urls), unit="files"):
